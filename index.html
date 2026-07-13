@@ -332,7 +332,13 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 </style>
 </head>
 <body>
-
+  
+<script>
+if (!document.cookie.includes("auth=ok")) {
+    window.location.href = "/login.html";
+}
+</script>
+  
 <header class="hdr">
   <div class="hdr-logo"><img id="hdr-logo-img" src="" alt="Mindset"></div>
   <div>
@@ -1475,6 +1481,15 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 
 </div><!-- end wrap -->
 
+ <button onclick="logout()">Logout</button>
+
+<script>
+function logout() {
+    document.cookie = "auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    window.location.href = "/login.html";
+}
+</script>
+  
 <script>
 // ── KONSTANTA & GLOBAL STATE ──────────────────────────────────────
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyFolbE4ziguFglG--TVpoHcdBhhpEtMnNOeeuZjge6z0EbkBl2k65DsxYoPYL61X0b/exec';

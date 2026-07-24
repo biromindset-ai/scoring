@@ -332,13 +332,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 </style>
 </head>
 <body>
-  
-<script>
-if (!document.cookie.includes("auth=ok")) {
-    window.location.href = "/login.html";
-}
-</script>
-  
+
 <header class="hdr">
   <div class="hdr-logo"><img id="hdr-logo-img" src="" alt="Mindset"></div>
   <div>
@@ -816,14 +810,11 @@ if (!document.cookie.includes("auth=ok")) {
           <div id="nst-prev-tgl" style="font-size:12px;font-weight:600;color:var(--ink)">—</div>
         </div>
       </div>
-      <!-- Hanya usia yang perlu diisi khusus untuk NST -->
-      <div class="fg">
-        <div class="f"><label class="lbl">Usia (Tahun)</label>
-          <input class="fi" id="nst-usia-thn" type="number" min="3" max="12" placeholder="Tahun" oninput="nstCalc()">
-        </div>
-        <div class="f"><label class="lbl">Usia (Bulan)</label>
-          <input class="fi" id="nst-usia-bln" type="number" min="0" max="11" placeholder="Bulan" oninput="nstCalc()">
-        </div>
+      <!-- Usia dihitung OTOMATIS dari Tanggal Lahir (panel ① Identitas) & Tanggal Tes — sama seperti TKD -->
+      <div style="background:var(--mauve-p);border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--mauve-d);font-weight:700;white-space:nowrap">Usia Saat Tes (Otomatis)</div>
+        <div id="nst-prev-usia" style="font-size:14px;font-weight:700;color:var(--ink)">—</div>
+        <div style="font-size:9.5px;color:var(--ink-s);margin-left:auto">Dihitung otomatis dari <strong>Tanggal Lahir</strong> &amp; <strong>Tanggal Tes</strong> di tab ① Identitas</div>
       </div>
     </div>
   </div>
@@ -928,7 +919,7 @@ if (!document.cookie.includes("auth=ok")) {
     <div class="l-id">
       <div class="l-idf"><div class="l-idlbl">Nama</div><div class="l-idval" id="nstl-nama">—</div></div>
       <div class="l-idf"><div class="l-idlbl">Kelas</div><div class="l-idval" id="nstl-kelas">—</div></div>
-      <div class="l-idf"><div class="l-idlbl">Usia</div><div class="l-idval" id="nstl-usia">—</div></div>
+      <div class="l-idf"><div class="l-idlbl">Tgl Lahir</div><div class="l-idval" id="nstl-lahir">—</div><div style="font-size:9px;color:var(--ink-s);margin-top:1px" id="nstl-usia-sub"></div></div>
       <div class="l-idf"><div class="l-idlbl">Tgl Tes</div><div class="l-idval" id="nstl-tgltes">—</div></div>
     </div>
 
@@ -1481,15 +1472,6 @@ if (!document.cookie.includes("auth=ok")) {
 
 </div><!-- end wrap -->
 
- <button onclick="logout()">Logout</button>
-
-<script>
-function logout() {
-    document.cookie = "auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    window.location.href = "/login.html";
-}
-</script>
-  
 <script>
 // ── KONSTANTA & GLOBAL STATE ──────────────────────────────────────
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyFolbE4ziguFglG--TVpoHcdBhhpEtMnNOeeuZjge6z0EbkBl2k65DsxYoPYL61X0b/exec';
@@ -1798,6 +1780,22 @@ function checkMC10() {
   setTotDisplay('tot10', s);
 }
 
+// ── Hitung usia (tahun, bulan) dari Tanggal Lahir & Tanggal Tes ────
+// Dipakai NST (menggantikan input manual Usia Tahun/Bulan — sekarang
+// otomatis dihitung dari Tanggal Lahir di panel ① Identitas, sama seperti TKD).
+function hitungUsiaDariTgl(tglLahirStr, tglTesStr) {
+  if (!tglLahirStr || !tglTesStr) return null;
+  const lahir = new Date(tglLahirStr);
+  const tes   = new Date(tglTesStr);
+  if (isNaN(lahir) || isNaN(tes)) return null;
+  let tahun = tes.getFullYear() - lahir.getFullYear();
+  let bulan = tes.getMonth() - lahir.getMonth();
+  if (tes.getDate() < lahir.getDate()) bulan--;
+  if (bulan < 0) { tahun--; bulan += 12; }
+  if (tahun < 0) return null; // tanggal tes sebelum tanggal lahir — data tidak valid
+  return { tahun, bulan };
+}
+
 // ── SYNC identitas ─────────────────────────────────────────────
 function syncNSTPreview() {
   const fmt = v => {
@@ -1816,6 +1814,10 @@ function syncNSTPreview() {
   if (el('nst-prev-lahir'))   el('nst-prev-lahir').textContent  = fmt(el('tgl-lahir')?.value) || '—';
   if (el('nst-prev-jk'))      el('nst-prev-jk').textContent     = el('jk')?.value==='L'?'Laki-laki':el('jk')?.value==='P'?'Perempuan':'—';
   if (el('nst-prev-tgl'))     el('nst-prev-tgl').textContent    = fmt(el('tgl-tes')?.value)   || '—';
+  if (el('nst-prev-usia')) {
+    const usia = hitungUsiaDariTgl(el('tgl-lahir')?.value, el('tgl-tes')?.value);
+    el('nst-prev-usia').textContent = usia ? `${usia.tahun} Tahun ${usia.bulan} Bulan` : '—';
+  }
 }
 
 function sync() {
@@ -2379,20 +2381,33 @@ function buildNSTReport() {
   const nama    = document.getElementById('nama')?.value   ;
   const sekolah = document.getElementById('sekolah')?.value || '—';
   const kelas   = document.getElementById('kelas')?.value  ;
-  const thn     = document.getElementById('nst-usia-thn')?.value || '';
-  const bln     = document.getElementById('nst-usia-bln')?.value || '';
+  const tglLahir= document.getElementById('tgl-lahir')?.value || '';
   const jk      = document.getElementById('jk')?.value     ;
   const tglTes  = document.getElementById('tgl-tes')?.value;
   const asessor = getAsessorAktif();
   const psikolog= getPsikolog();
-  const usiaTxt = (thn || bln) ? `${thn} tahun ${bln} bulan` : '';
+
+  const usiaCalc = hitungUsiaDariTgl(tglLahir, tglTes);
+  let tglLahirFmt, usiaSubTxt;
+  if (tglLahir && usiaCalc) {
+    tglLahirFmt = new Date(tglLahir).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+    usiaSubTxt  = `(${usiaCalc.tahun} th ${usiaCalc.bulan} bln saat tes)`;
+  } else if (window._nstUsiaFallback) {
+    // Data lama (sebelum kolom tanggal_lahir ditambahkan) — tampilkan usia yang tersimpan di sheet apa adanya
+    tglLahirFmt = '—';
+    usiaSubTxt  = `${window._nstUsiaFallback.tahun} th ${window._nstUsiaFallback.bulan} bln (data lama)`;
+  } else {
+    tglLahirFmt = '—';
+    usiaSubTxt  = '';
+  }
   const tglFmt  = tglTes ? new Date(tglTes).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '—';
 
   // Identitas
   document.getElementById('nstl-nama').textContent    = nama;
   document.getElementById('nstl-sekolah') && (document.getElementById('nstl-sekolah').textContent = sekolah);
   document.getElementById('nstl-kelas').textContent   = kelas;
-  document.getElementById('nstl-usia').textContent    = usiaTxt;
+  document.getElementById('nstl-lahir').textContent   = tglLahirFmt;
+  document.getElementById('nstl-usia-sub') && (document.getElementById('nstl-usia-sub').textContent = usiaSubTxt);
   document.getElementById('nstl-tgltes').textContent  = tglFmt;
   document.getElementById('nstl-tgltes2').textContent = tglFmt;
   document.getElementById('nstl-assessor').textContent  = asessor;
@@ -2541,12 +2556,16 @@ async function saveNSTToSheets() {
   const nama    = document.getElementById('nama')?.value    ;
   const sekolah = document.getElementById('sekolah')?.value  || '—';
   const kelas   = document.getElementById('kelas')?.value   ;
+  const tglLahir= document.getElementById('tgl-lahir')?.value || '';
   const tglTes  = document.getElementById('tgl-tes')?.value ;
   const jk      = document.getElementById('jk')?.value      ;
-  const thn     = document.getElementById('nst-usia-thn')?.value || '—';
-  const bln     = document.getElementById('nst-usia-bln')?.value || '—';
   const psikolog= getPsikolog();
   const asessor = getAsessorAktif();
+
+  // Usia dihitung OTOMATIS dari Tanggal Lahir & Tanggal Tes (bukan input manual lagi)
+  const usia = hitungUsiaDariTgl(tglLahir, tglTes);
+  const thn  = usia ? usia.tahun : (window._nstUsiaFallback?.tahun ?? '');
+  const bln  = usia ? usia.bulan : (window._nstUsiaFallback?.bulan ?? '');
 
   // ── Data hasil scoring ─────────────────────────────────────
   const h  = window._nstHasil || {};
@@ -2556,8 +2575,10 @@ async function saveNSTToSheets() {
   const skaArr  = (h.hasil||[]).map(s => s.skala || 0);
 
   // ── Standard headers & values ──────────────────────────────
+  // Catatan: kolom "tgl_lahir" ditempatkan setelah "kelas" dan sebelum "tgl_tes",
+  // meniru urutan kolom di HASIL_TKD. Sesuaikan urutan kolom di HASIL_NST jika berbeda.
   const headers = [
-    'timestamp','tes','nama','sekolah','kelas','tgl_tes','jenis_kelamin',
+    'timestamp','tes','nama','sekolah','kelas','tgl_lahir','tgl_tes','jenis_kelamin',
     'psikolog','asessor','usia_tahun','usia_bulan',
     'raw_nst1','raw_nst2','raw_nst3','raw_nst4','raw_nst5',
     'raw_nst6','raw_nst7','raw_nst8','raw_nst9','raw_nst10',
@@ -2572,7 +2593,7 @@ async function saveNSTToSheets() {
 
   const values = [
     timestampVal, 'NST',
-    nama, sekolah, kelas, tglTes, jk,
+    nama, sekolah, kelas, tglLahir, tglTes, jk,
     psikolog, asessor, thn, bln,
     ...rawArr, ...skaArr,
     h.totalRaw||0,
@@ -3321,10 +3342,14 @@ function cetIsiFrmNST(row) {
   sv('kelas',    row.kelas);
   sv('jk',       row.jenis_kelamin);
   sv('tgl-tes',  row.tgl_tes);
-sv('asessor',  row.asessor);  // ← tambahan
-  // Usia — sesuai ID di buildNSTReport (nst-usia-thn / nst-usia-bln)
-  sv('nst-usia-thn', row.usia_tahun);
-  sv('nst-usia-bln', row.usia_bulan);
+  sv('tgl-lahir',row.tgl_lahir);
+  sv('asessor',  row.asessor);
+
+  // Fallback usia untuk data LAMA yang belum punya kolom tgl_lahir terisi —
+  // dipakai buildNSTReport()/saveNSTToSheets() sebagai cadangan tampilan.
+  window._nstUsiaFallback = (!row.tgl_lahir && (row.usia_tahun || row.usia_bulan))
+    ? { tahun: parseInt(row.usia_tahun) || 0, bulan: parseInt(row.usia_bulan) || 0 }
+    : null;
 
   // Skor raw NST — sesuai ID input di tabel NST (nst1-raw .. nst10-raw)
   for (let k = 1; k <= 10; k++) {
@@ -3517,7 +3542,8 @@ function tkdBukaTotal() {
 
 // Bersihkan hanya skor NST (identitas tetap)
 function bersihkanSkorNST() {
-  ['nst-usia-thn','nst-usia-bln'].forEach(id => { const el = document.getElementById(id); if (el) el.value=''; });
+  const usiaEl = document.getElementById('nst-prev-usia'); if (usiaEl) usiaEl.textContent = '—';
+  window._nstUsiaFallback = null;
   NST_SUBTESTS.forEach(s => {
     const raw = document.getElementById(s.kode+'-raw'); if (raw) raw.value = '';
     const sk  = document.getElementById(s.kode+'-skala'); if (sk) sk.textContent = '—';

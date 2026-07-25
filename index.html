@@ -602,26 +602,51 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
       sheet.setColumnWidth(3, 180);
     }
 
+    // Ambil header ASLI dari baris 1 sheet (bukan asumsi urutan dari klien) —
+    // ini membuat penulisan data KEBAL terhadap kolom yang disisipkan/diurutkan ulang manual.
+    const lastCol      = Math.max(sheet.getLastColumn(), payload.headers ? payload.headers.length : 1);
+    const sheetHeaders = sheet.getLastRow() > 0
+      ? sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+      : (payload.headers || []);
+
+    // Susun baris baru dengan MEMETAKAN tiap field berdasarkan NAMA header
+    // (payload.headers[i] -> payload.values[i]), bukan berdasarkan posisi array.
+    // existingRow (opsional) dipertahankan untuk kolom yang tidak dikirim klien.
+    function petakanBarisByHeader(existingRow) {
+      const row = existingRow ? existingRow.slice() : new Array(sheetHeaders.length).fill('');
+      (payload.headers || []).forEach((h, i) => {
+        let col = sheetHeaders.indexOf(h);
+        if (col === -1) { sheetHeaders.push(h); col = sheetHeaders.length - 1; }
+        while (row.length <= col) row.push('');
+        row[col] = payload.values[i];
+      });
+      return row;
+    }
+
     // MODE UPDATE (fitur Edit Data) — cari baris dg timestamp = row_key, lalu timpa
     if (payload.mode === 'update' && payload.row_key && payload.values) {
-      const data    = sheet.getDataRange().getValues();
-      const headers = data[0] || payload.headers || [];
-      const tsCol   = headers.indexOf('timestamp');
-      let rowIndex  = -1;
+      const data  = sheet.getDataRange().getValues();
+      const tsCol = sheetHeaders.indexOf('timestamp');
+      let rowIndex = -1;
       if (tsCol > -1) {
         for (let i = 1; i < data.length; i++) {
           if (String(data[i][tsCol]) === String(payload.row_key)) { rowIndex = i + 1; break; }
         }
       }
       if (rowIndex > 0) {
-        sheet.getRange(rowIndex, 1, 1, payload.values.length).setValues([payload.values]);
+        const newRow = petakanBarisByHeader(data[rowIndex - 1]);
+        sheet.getRange(rowIndex, 1, 1, newRow.length).setValues([newRow]);
         return jsonResponse({ status: 'ok', sheet: sheetName, row: rowIndex, mode: 'updated' });
       }
-      sheet.appendRow(payload.values);
+      const newRow = petakanBarisByHeader(null);
+      sheet.appendRow(newRow);
       return jsonResponse({ status: 'ok', sheet: sheetName, row: sheet.getLastRow(), mode: 'appended' });
     }
 
-    if (payload.values) sheet.appendRow(payload.values);
+    if (payload.values) {
+      const newRow = petakanBarisByHeader(null);
+      sheet.appendRow(newRow);
+    }
     return jsonResponse({ status: 'ok', sheet: sheetName, row: sheet.getLastRow() });
 
   } catch(err) {
@@ -1134,26 +1159,51 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
       sheet.setColumnWidth(3, 180);
     }
 
+    // Ambil header ASLI dari baris 1 sheet (bukan asumsi urutan dari klien) —
+    // ini membuat penulisan data KEBAL terhadap kolom yang disisipkan/diurutkan ulang manual.
+    const lastCol      = Math.max(sheet.getLastColumn(), payload.headers ? payload.headers.length : 1);
+    const sheetHeaders = sheet.getLastRow() > 0
+      ? sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+      : (payload.headers || []);
+
+    // Susun baris baru dengan MEMETAKAN tiap field berdasarkan NAMA header
+    // (payload.headers[i] -> payload.values[i]), bukan berdasarkan posisi array.
+    // existingRow (opsional) dipertahankan untuk kolom yang tidak dikirim klien.
+    function petakanBarisByHeader(existingRow) {
+      const row = existingRow ? existingRow.slice() : new Array(sheetHeaders.length).fill('');
+      (payload.headers || []).forEach((h, i) => {
+        let col = sheetHeaders.indexOf(h);
+        if (col === -1) { sheetHeaders.push(h); col = sheetHeaders.length - 1; }
+        while (row.length <= col) row.push('');
+        row[col] = payload.values[i];
+      });
+      return row;
+    }
+
     // MODE UPDATE (fitur Edit Data) — cari baris dg timestamp = row_key, lalu timpa
     if (payload.mode === 'update' && payload.row_key && payload.values) {
-      const data    = sheet.getDataRange().getValues();
-      const headers = data[0] || payload.headers || [];
-      const tsCol   = headers.indexOf('timestamp');
-      let rowIndex  = -1;
+      const data  = sheet.getDataRange().getValues();
+      const tsCol = sheetHeaders.indexOf('timestamp');
+      let rowIndex = -1;
       if (tsCol > -1) {
         for (let i = 1; i < data.length; i++) {
           if (String(data[i][tsCol]) === String(payload.row_key)) { rowIndex = i + 1; break; }
         }
       }
       if (rowIndex > 0) {
-        sheet.getRange(rowIndex, 1, 1, payload.values.length).setValues([payload.values]);
+        const newRow = petakanBarisByHeader(data[rowIndex - 1]);
+        sheet.getRange(rowIndex, 1, 1, newRow.length).setValues([newRow]);
         return jsonResponse({ status: 'ok', sheet: sheetName, row: rowIndex, mode: 'updated' });
       }
-      sheet.appendRow(payload.values);
+      const newRow = petakanBarisByHeader(null);
+      sheet.appendRow(newRow);
       return jsonResponse({ status: 'ok', sheet: sheetName, row: sheet.getLastRow(), mode: 'appended' });
     }
 
-    if (payload.values) sheet.appendRow(payload.values);
+    if (payload.values) {
+      const newRow = petakanBarisByHeader(null);
+      sheet.appendRow(newRow);
+    }
     return jsonResponse({ status: 'ok', sheet: sheetName, row: sheet.getLastRow() });
 
   } catch(err) {
@@ -2575,8 +2625,10 @@ async function saveNSTToSheets() {
   const skaArr  = (h.hasil||[]).map(s => s.skala || 0);
 
   // ── Standard headers & values ──────────────────────────────
-  // Catatan: kolom "tgl_lahir" ditempatkan setelah "kelas" dan sebelum "tgl_tes",
-  // meniru urutan kolom di HASIL_TKD. Sesuaikan urutan kolom di HASIL_NST jika berbeda.
+  // Catatan: urutan array headers/values di bawah TIDAK HARUS sama persis dengan
+  // urutan kolom di sheet — Apps Script (doPost versi terbaru) memetakan tiap
+  // field berdasarkan NAMA header, bukan posisi. Pastikan Apps Script sudah
+  // menggunakan versi terbaru (lihat ⚙ Settings → Google Sheets → Cara setup).
   const headers = [
     'timestamp','tes','nama','sekolah','kelas','tgl_lahir','tgl_tes','jenis_kelamin',
     'psikolog','asessor','usia_tahun','usia_bulan',
@@ -3131,6 +3183,48 @@ let _cetEditMode = false;// sedang dalam mode edit data lama?
 let _cetEditJenis= null; // 'TKD' atau 'NST' yang sedang diedit
 let _cetEditKey  = null; // timestamp baris asli — dipakai backend untuk mencari & update baris
 
+// ── Normalisasi berbagai format tanggal dari GViz menjadi YYYY-MM-DD ──
+// Google Sheets bisa mengembalikan tanggal dalam beberapa bentuk berbeda
+// tergantung format tampilan kolom: "Date(2020,9,9)" (raw GViz, bulan 0-based),
+// teks lokal Indonesia ("9 Oktober 2020" / "09 Oktober2020"), atau sudah ISO.
+// <input type="date"> HANYA menerima format YYYY-MM-DD — kalau tidak dinormalisasi,
+// value akan gagal ter-set (browser diam-diam mengosongkannya) dan data tanggal
+// bisa "hilang" saat form disimpan ulang.
+const _BULAN_ID = {
+  januari:'01', februari:'02', maret:'03', april:'04', mei:'05', juni:'06',
+  juli:'07', agustus:'08', september:'09', oktober:'10', november:'11', desember:'12'
+};
+function normalisasiTanggalISO(raw) {
+  if (!raw) return '';
+  const s = String(raw).trim();
+
+  // Sudah ISO (YYYY-MM-DD...)
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+
+  // Format raw GViz: Date(Y,M,D) — bulan 0-indexed
+  m = s.match(/^Date\((\d+),(\d+),(\d+)/);
+  if (m) {
+    const y = m[1], mo = String(parseInt(m[2]) + 1).padStart(2,'0'), d = String(parseInt(m[3])).padStart(2,'0');
+    return `${y}-${mo}-${d}`;
+  }
+
+  // Format teks Indonesia: "9 Oktober 2020" / "09 Oktober2020" (spasi sebelum tahun opsional)
+  m = s.match(/^(\d{1,2})\s+([A-Za-z]+)\s*(\d{4})$/);
+  if (m) {
+    const mo = _BULAN_ID[m[2].toLowerCase()];
+    if (mo) return `${m[3]}-${mo}-${String(parseInt(m[1])).padStart(2,'0')}`;
+  }
+
+  // Fallback terakhir: coba parse umum via Date()
+  const d = new Date(s);
+  if (!isNaN(d) && s.length >= 8) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  return ''; // tidak bisa di-parse — biarkan kosong daripada menyimpan sampah
+}
+
 // ── Ambil satu sheet via GViz ──────────────────────────────────
 async function cetFetchSheet(tab) {
   const url = `https://docs.google.com/spreadsheets/d/${CET_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tab)}`;
@@ -3142,11 +3236,14 @@ async function cetFetchSheet(tab) {
   const gviz = JSON.parse(matchGviz[1]);
   if (!gviz.table || !gviz.table.rows) return [];
   const cols = gviz.table.cols.map(c => c.label);
+  const DATE_FIELDS = new Set(['tgl_lahir', 'tgl_tes']);
   return gviz.table.rows
     .map(r => {
       const obj = {};
       cols.forEach((c, i) => {
-        obj[c] = r.c[i] ? (r.c[i].f !== null && r.c[i].f !== undefined ? r.c[i].f : r.c[i].v) : '';
+        let val = r.c[i] ? (r.c[i].f !== null && r.c[i].f !== undefined ? r.c[i].f : r.c[i].v) : '';
+        if (DATE_FIELDS.has(c)) val = normalisasiTanggalISO(val);
+        obj[c] = val;
       });
       return obj;
     })

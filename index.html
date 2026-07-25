@@ -802,11 +802,15 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 
   <!-- Identitas NST — dari panel ① Identitas -->
   <div class="card">
-    <div class="card-hd"><span class="card-title">Identitas Peserta</span><span class="badge">Dari tab ① Identitas</span></div>
+    <div class="card-hd">
+      <span class="card-title">Identitas Peserta</span>
+      <span class="badge">Dari tab ① Identitas</span>
+      <button class="btn-o" onclick="showPanel('p-id', document.querySelectorAll('.tab')[0])" style="margin-left:auto;padding:6px 14px;font-size:11px">✏️ Edit di Tab Identitas</button>
+    </div>
     <div class="card-body">
       <div style="background:var(--mauve-p);border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--ink-m)">
-        ℹ Data peserta diambil otomatis dari tab <strong>① Identitas</strong>.
-        Pastikan sudah diisi sebelum melanjutkan ke sini.
+        ℹ Data peserta (nama, sekolah, kelas, tanggal lahir, dll.) diambil otomatis dari tab <strong>① Identitas</strong> —
+        klik tombol <strong>✏️ Edit di Tab Identitas</strong> di atas untuk mengubahnya, lalu kembali ke tab ini.
       </div>
       <!-- Preview identitas dari panel ① -->
       <div id="nst-id-preview" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">

@@ -361,7 +361,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 <!-- ══ PANEL 1: IDENTITAS ══ -->
 <div id="p-id" class="panel on">
   <!-- SELECTOR JENIS TES -->
-  <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+  <div style="display:flex;gap:10px;margin-bottom:6px;flex-wrap:wrap">
     <div style="font-size:11px;font-weight:600;color:var(--ink-m);align-self:center;white-space:nowrap">Jenis Psikotes:</div>
     <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:8px 16px;border:2px solid var(--mauve);border-radius:8px;background:var(--mauve-p);user-select:none" id="label-tes-tkd">
       <input type="radio" name="jenis-tes" id="tes-tkd" value="TKD" checked onchange="setJenisTes('TKD')" style="accent-color:var(--mauve)">
@@ -373,6 +373,9 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
       <span style="font-size:12px;font-weight:700;color:var(--ink-m)">NST</span>
       <span style="font-size:10px;color:var(--ink-m)">Nijmegen School Test · Kematangan Belajar</span>
     </label>
+  </div>
+  <div id="jenis-tes-locked-note" style="display:none;font-size:10.5px;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:6px;padding:8px 12px;margin-bottom:14px">
+    🔒 Jenis psikotes terkunci ke <strong id="jenis-tes-locked-label">—</strong> selama mode Edit Data aktif — tidak bisa diganti agar data TKD/NST tidak tertukar.
   </div>
 
   <div class="card">
@@ -440,8 +443,9 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
   <div id="tkd-edit-banner" class="edit-mode-banner" style="display:none">
     <span style="font-size:20px">✏️</span>
     <span style="font-size:11.5px;color:var(--ink-m);flex:1">
-      <b>Mode Edit Data</b> — sistem hanya menyimpan skor <b>Total per subtes</b>, bukan jawaban tiap soal. Kotak jawaban individual di setiap kartu di bawah ini sengaja dibuat pudar/nonaktif karena memang <b>tidak memuat data lama</b>. Yang berisi data lama dan bisa diedit hanyalah kotak <b>Total</b> (berlatar kuning) di bagian bawah tiap kartu subtes. Setelah selesai, klik <b>💾 Simpan ke Google Sheets</b> untuk memperbarui data.
+      <b>Mode Edit Data</b> — sistem hanya menyimpan skor <b>Total per subtes</b>, bukan jawaban tiap soal. Kotak jawaban individual di setiap kartu di bawah ini sengaja dibuat pudar/nonaktif karena memang <b>tidak memuat data lama</b>. Yang berisi data lama dan bisa diedit hanyalah kotak <b>Total</b> (berlatar kuning) di bagian bawah tiap kartu subtes. Perlu ubah nama/sekolah/tanggal lahir dll? Klik <b>✏️ Edit di Tab Identitas</b>, lalu kembali ke sini. Setelah selesai, klik <b>💾 Simpan ke Google Sheets</b> untuk memperbarui data.
     </span>
+    <button class="btn-o" onclick="showPanel('p-id', document.querySelectorAll('.tab')[0])" style="white-space:nowrap">✏️ Edit di Tab Identitas</button>
     <button class="btn-o" onclick="cetBatalEdit()" style="white-space:nowrap;border-color:#F5C2C0;color:#904040">✕ Batal Edit</button>
   </div>
 
@@ -1891,6 +1895,26 @@ function showPanel(id, btn) {
 // ── JENIS TES ───────────────────────────────────────────────────
 let _jenisTes = 'TKD';
 
+// Kunci/buka radio "Jenis Psikotes" — dikunci selama mode Edit Data aktif
+// agar user tidak bisa tukar jenis di tengah proses edit (bisa bikin data tertukar).
+function kunciJenisTesUntukEdit(lock, jenis) {
+  const rTKD = document.getElementById('tes-tkd');
+  const rNST = document.getElementById('tes-nst');
+  const lTKD = document.getElementById('label-tes-tkd');
+  const lNST = document.getElementById('label-tes-nst');
+  const note = document.getElementById('jenis-tes-locked-note');
+  const noteLbl = document.getElementById('jenis-tes-locked-label');
+  [rTKD, rNST].forEach(r => { if (r) r.disabled = lock; });
+  [lTKD, lNST].forEach(l => {
+    if (!l) return;
+    l.style.opacity = lock ? '.55' : '1';
+    l.style.cursor = lock ? 'not-allowed' : 'pointer';
+    l.style.pointerEvents = lock ? 'none' : 'auto';
+  });
+  if (note) note.style.display = lock ? 'block' : 'none';
+  if (noteLbl) noteLbl.textContent = jenis || '—';
+}
+
 function setJenisTes(jenis) {
   _jenisTes = jenis;
   const lTKD = document.getElementById('label-tes-tkd');
@@ -1907,6 +1931,13 @@ function setJenisTes(jenis) {
 
 function lanjutScoring() {
   const tabs = document.querySelectorAll('.tab');
+  // Saat mode Edit Data aktif, selalu kembali ke panel yang SEDANG diedit
+  // (TKD/NST) — mengabaikan radio "Jenis Psikotes" agar tidak salah arah
+  // jika user sempat mampir ke tab Identitas di tengah proses edit.
+  if (_cetEditMode && _cetEditJenis) {
+    showPanel(_cetEditJenis === 'NST' ? 'p-nst' : 'p-tkd', tabs[_cetEditJenis === 'NST' ? 2 : 1]);
+    return;
+  }
   if (_jenisTes === 'NST') {
     showPanel('p-nst', tabs[2]);
   } else {
@@ -3525,6 +3556,16 @@ function cetEditData(jenis) {
   _cetEditJenis = jenis;
   _cetEditKey   = row.timestamp;
 
+  // Sinkronkan radio "Jenis Psikotes" di panel ① Identitas supaya tombol
+  // "Lanjut ke Scoring →" di sana ikut mengarah ke jenis yang benar (TKD/NST)
+  // apabila user sempat mampir ke tab Identitas saat mode edit aktif.
+  setJenisTes(jenis);
+  const radioTKD = document.getElementById('tes-tkd');
+  const radioNST = document.getElementById('tes-nst');
+  if (jenis === 'TKD' && radioTKD) radioTKD.checked = true;
+  if (jenis === 'NST' && radioNST) radioNST.checked = true;
+  kunciJenisTesUntukEdit(true, jenis); // kunci — tidak boleh ganti jenis selama edit
+
   const tabs = document.querySelectorAll('.tab');
 
   if (jenis === 'TKD') {
@@ -3555,6 +3596,7 @@ function cetBatalEdit() {
   _cetEditMode = false;
   _cetEditJenis = null;
   _cetEditKey = null;
+  kunciJenisTesUntukEdit(false); // buka kunci kembali
 }
 
 

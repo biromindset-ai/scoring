@@ -339,6 +339,20 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 .kl.sedang{background:#E8F0F8;color:#3A6894}
 .kl.rendah{background:#FBF1E8;color:#8B5E3C}
 
+/* Blok interpretasi per trait (Big Five) — sebelumnya tidak terdefinisi, menyebabkan section ini renders tanpa margin/style */
+.l-trait-block{margin:0 44px 14px 52px}
+.l-trait-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.l-trait-name{font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:600;color:var(--ink)}
+.l-trait-p{font-size:10px;color:var(--ink-m);line-height:1.6;font-weight:300}
+
+/* Teks laporan yang bisa diedit manual oleh psikolog (narasi, interpretasi, saran) */
+.editable-txt{outline:none;border-bottom:1px dashed transparent;border-radius:2px;transition:background .12s}
+.editable-txt:hover{border-bottom-color:var(--mauve-l)}
+.editable-txt:focus{border-bottom-color:var(--mauve);background:rgba(181,105,138,.06)}
+.edit-reset-btn{margin-left:auto;font-size:9px;color:var(--ink-s);background:none;border:1px solid var(--rule);border-radius:4px;padding:1px 6px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.edit-reset-btn:hover{color:var(--mauve-d);border-color:var(--mauve-l)}
+@media print{ .editable-txt{border-bottom:none!important;background:none!important} .edit-reset-btn{display:none!important} }
+
 /* ITEM LIST — Big Five (Likert 5) & Gaya Belajar (Ya/Tidak) */
 .lk-list{border:1px solid var(--rule);border-radius:8px;overflow:hidden}
 .lk-item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-bottom:1px solid var(--rule);font-size:11.5px}
@@ -1111,6 +1125,20 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 <div id="p-bigfive" class="panel">
 
   <div class="card">
+    <div class="card-hd"><span class="card-title">🔍 Buka Data yang Sudah Tersimpan</span></div>
+    <div class="card-body">
+      <div style="display:flex;gap:10px;align-items:flex-end">
+        <div style="flex:1">
+          <label style="display:block;font-size:9px;color:var(--ink-s);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Cari nama peserta</label>
+          <input class="fi" id="bf-cari-nama" type="text" placeholder="Ketik nama peserta, atau kosongkan untuk lihat 15 data terbaru...">
+        </div>
+        <button class="btn-o" onclick="bfCariData()">Cari & Tampilkan</button>
+      </div>
+      <div id="bf-cari-hasil" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-hd">
       <span class="card-title">Identitas Peserta</span>
       <span class="badge">Dari tab ① Identitas</span>
@@ -1170,7 +1198,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
     <button class="btn-p" onclick="bfPrintLaporan()">🖨 Cetak / Simpan PDF</button>
     <button class="btn-o" onclick="showPanel('p-bigfive',document.querySelectorAll('.tab')[5])">← Edit Input Big Five</button>
     <button class="btn-o" onclick="bfOpenSaveModal()" style="background:#EAF5EE;color:#2E7D4F;border-color:#B4DCC4">💾 Simpan ke Google Sheets</button>
-    <span class="btn-note">Print → Save as PDF. Skala A4, matikan header/footer browser.</span>
+    <span class="btn-note">Print → Save as PDF. Skala A4, matikan header/footer browser. 💡 Klik langsung teks ringkasan/interpretasi di bawah untuk mengedit manual.</span>
   </div>
 
   <!-- MODAL SIMPAN BIG FIVE -->
@@ -1180,7 +1208,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
       <div style="font-size:11px;color:#8A8090;margin-bottom:18px">Identitas peserta, skor per trait, dan 44 jawaban akan disimpan ke sheet <code>HASIL_BIGFIVE</code>.</div>
       <div id="bf-modal-status" style="display:none;font-size:11px;padding:8px 12px;border-radius:6px;margin-bottom:14px"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button onclick="bfCloseSaveModal()" style="padding:8px 18px;background:transparent;color:#7D3F5C;border:1.5px solid #D4A0B8;border-radius:7px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif">Batal</button>
+        <button onclick="bfCloseSaveModal()" id="bf-modal-cancel" style="padding:8px 18px;background:transparent;color:#7D3F5C;border:1.5px solid #D4A0B8;border-radius:7px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif">Batal</button>
         <button onclick="bfSaveToSheets()" id="btn-bf-save" style="padding:8px 22px;background:#B5698A;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif">💾 Simpan Sekarang</button>
       </div>
     </div>
@@ -1220,8 +1248,10 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
     <div class="sp16"></div>
     <div class="l-sec"><span>Ringkasan Profil</span><div class="l-secl"></div></div>
     <div class="l-nar">
-      <div class="l-nar-t">Gambaran Umum Kepribadian</div>
-      <div class="l-nar-p" id="bfl-narasi">—</div>
+      <div class="l-nar-t" style="display:flex;align-items:center;gap:8px">Gambaran Umum Kepribadian
+        <button type="button" class="edit-reset-btn" onclick="bfResetField('narasi')" title="Reset ke teks otomatis">↺ reset</button>
+      </div>
+      <div class="l-nar-p editable-txt" id="bfl-narasi" contenteditable="true" oninput="bfMarkEdited('narasi')">—</div>
     </div>
 
     <div class="sp16"></div>
@@ -1249,6 +1279,20 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 <!-- ══ PANEL 8: GAYA BELAJAR SCORING (MANUAL) ══ -->
 <!-- ══════════════════════════════════════════════════════════ -->
 <div id="p-gayabelajar" class="panel">
+
+  <div class="card">
+    <div class="card-hd"><span class="card-title">🔍 Buka Data yang Sudah Tersimpan</span></div>
+    <div class="card-body">
+      <div style="display:flex;gap:10px;align-items:flex-end">
+        <div style="flex:1">
+          <label style="display:block;font-size:9px;color:var(--ink-s);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Cari nama peserta</label>
+          <input class="fi" id="gb-cari-nama" type="text" placeholder="Ketik nama peserta, atau kosongkan untuk lihat 15 data terbaru...">
+        </div>
+        <button class="btn-o" onclick="gbCariData()">Cari & Tampilkan</button>
+      </div>
+      <div id="gb-cari-hasil" style="margin-top:10px"></div>
+    </div>
+  </div>
 
   <div class="card">
     <div class="card-hd">
@@ -1313,7 +1357,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
     <button class="btn-p" onclick="gbPrintLaporan()">🖨 Cetak / Simpan PDF</button>
     <button class="btn-o" onclick="showPanel('p-gayabelajar',document.querySelectorAll('.tab')[6])">← Edit Input Gaya Belajar</button>
     <button class="btn-o" onclick="gbOpenSaveModal()" style="background:#EAF5EE;color:#2E7D4F;border-color:#B4DCC4">💾 Simpan ke Google Sheets</button>
-    <span class="btn-note">Print → Save as PDF. Skala A4, matikan header/footer browser.</span>
+    <span class="btn-note">Print → Save as PDF. Skala A4, matikan header/footer browser. 💡 Klik langsung teks narasi/saran di bawah untuk mengedit manual.</span>
   </div>
 
   <!-- MODAL SIMPAN GAYA BELAJAR -->
@@ -1323,7 +1367,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
       <div style="font-size:11px;color:#8A8090;margin-bottom:18px">Identitas peserta, skor 3 dimensi, dan 36 jawaban akan disimpan ke sheet <code>HASIL_GAYABELAJAR</code>.</div>
       <div id="gb-modal-status" style="display:none;font-size:11px;padding:8px 12px;border-radius:6px;margin-bottom:14px"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button onclick="gbCloseSaveModal()" style="padding:8px 18px;background:transparent;color:#7D3F5C;border:1.5px solid #D4A0B8;border-radius:7px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif">Batal</button>
+        <button onclick="gbCloseSaveModal()" id="gb-modal-cancel" style="padding:8px 18px;background:transparent;color:#7D3F5C;border:1.5px solid #D4A0B8;border-radius:7px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif">Batal</button>
         <button onclick="gbSaveToSheets()" id="btn-gb-save" style="padding:8px 22px;background:#B5698A;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif">💾 Simpan Sekarang</button>
       </div>
     </div>
@@ -1363,14 +1407,16 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
     <div class="sp16"></div>
     <div class="l-sec"><span>Gaya Belajar Dominan</span><div class="l-secl"></div></div>
     <div class="l-nar">
-      <div class="l-nar-t" id="gbl-dominan-title">—</div>
-      <div class="l-nar-p" id="gbl-narasi">—</div>
+      <div class="l-nar-t" style="display:flex;align-items:center;gap:8px"><span id="gbl-dominan-title">—</span>
+        <button type="button" class="edit-reset-btn" onclick="gbResetField('narasi')" title="Reset ke teks otomatis">↺ reset</button>
+      </div>
+      <div class="l-nar-p editable-txt" id="gbl-narasi" contenteditable="true" oninput="gbMarkEdited('narasi')">—</div>
     </div>
 
     <div class="sp16"></div>
     <div class="l-sec"><span>Rekomendasi Belajar</span><div class="l-secl"></div></div>
     <div class="l-rg" style="grid-template-columns:1fr">
-      <div class="l-rc"><div class="l-rh"><div class="l-rdot"></div><div class="l-rtit">Saran Praktis</div></div><div class="l-rp" id="gbl-saran">—</div></div>
+      <div class="l-rc"><div class="l-rh"><div class="l-rdot"></div><div class="l-rtit">Saran Praktis</div><button type="button" class="edit-reset-btn" onclick="gbResetField('saran')" title="Reset ke teks otomatis">↺ reset</button></div><div class="l-rp editable-txt" id="gbl-saran" contenteditable="true" oninput="gbMarkEdited('saran')">—</div></div>
     </div>
 
     <div class="sp12"></div>
@@ -1849,9 +1895,9 @@ let APP_SETTING = {
   psikolog:     'Dini Santiko Budi Sp.Psi, psikolog',
   sipp:         '2/0340/05/SRIPP/03',
   asessor_aktif:'Tasya',
-  asessor_list: ['Tasya','Vivi','Sherly','Susi','Dini','Andri'],
+  asessor_list: ['Tasya','Vivi','Sherly'],
   sekolah:      ['Daarusshofa','Darul Quran','Darul Habib','Cordova'],
-  kelas:        ['TK A','TK B','Klas 1','Klas 2','Klas 3','Klas 4','Klas 5','Klas 6','Klas 7A','Klas 7B','Klas 7C','Klas 7D','Klas 7E'],
+  kelas:        ['TK A','TK B','Klas 1','Klas 2','Klas 3','Klas 4','Klas 5','Klas 6'],
   footer_text:  'Dokumen rahasia — untuk keperluan bimbingan psikologis sekolah',
   tahun:        '2026',
 };
@@ -4192,6 +4238,10 @@ const BF_INTERPRETASI = {
 };
 
 let bfAnswers = {};
+let bfEdited = {narasi:false, E:false, A:false, C:false, N:false, O:false};
+
+function bfMarkEdited(key){ bfEdited[key] = true; }
+function bfResetField(key){ bfEdited[key] = false; bfBuildLaporan(); }
 
 function bfLevelDariPersen(pct){ if (pct<=33) return 'Rendah'; if (pct<=66) return 'Sedang'; return 'Tinggi'; }
 
@@ -4293,9 +4343,9 @@ function bfFmtTgl(v){
   return v;
 }
 
-function bfBuildLaporan(){
+function bfBuildLaporan(idOverride){
   const {traitSum,pct,level} = bfHitung();
-  const id = bfIdentitas();
+  const id = idOverride || bfIdentitas();
 
   document.getElementById('bfl-nama').textContent = id.nama || '—';
   document.getElementById('bfl-sekolah').textContent = (id.sekolah||'—') + (id.kelas ? ' / '+id.kelas : '');
@@ -4324,13 +4374,17 @@ function bfBuildLaporan(){
   if (sedang.length) narasi += `${tinggi.length?', diiringi':' dengan'} <strong>${sedang.join(', ')}</strong> pada level sedang`;
   if (rendah.length) narasi += `${(tinggi.length||sedang.length)?', serta':' dengan'} <strong>${rendah.join(', ')}</strong> pada level rendah`;
   narasi += '.';
-  document.getElementById('bfl-narasi').innerHTML = narasi;
+  if (!bfEdited.narasi) document.getElementById('bfl-narasi').innerHTML = narasi;
 
   document.getElementById('bfl-trait-blocks').innerHTML = Object.keys(traitSum).map(t=>{
     const kl = level[t]==='Tinggi'?'tinggi':level[t]==='Sedang'?'sedang':'rendah';
+    const existing = document.getElementById('bfl-interp-'+t);
+    const teks = bfEdited[t] && existing ? existing.innerHTML : BF_INTERPRETASI[t][level[t]];
     return `<div class="l-trait-block">
-      <div class="l-trait-hd"><span class="l-trait-name">${BF_TRAIT_NAMES[t]}</span><span class="kl ${kl}">${level[t]}</span></div>
-      <div class="l-trait-p">${BF_INTERPRETASI[t][level[t]]}</div>
+      <div class="l-trait-hd"><span class="l-trait-name">${BF_TRAIT_NAMES[t]}</span><span class="kl ${kl}">${level[t]}</span>
+        <button type="button" class="edit-reset-btn" onclick="bfResetField('${t}')" title="Reset ke teks otomatis">↺ reset</button>
+      </div>
+      <div class="l-trait-p editable-txt" id="bfl-interp-${t}" contenteditable="true" oninput="bfMarkEdited('${t}')">${teks}</div>
     </div>`;
   }).join('');
 }
@@ -4351,15 +4405,20 @@ function bfPrintLaporan(){
 function bfOpenSaveModal(){
   showPanel('p-bigfive-lap', document.querySelectorAll('.tab')[5]);
   bfBuildLaporan();
+  const cancelBtn = document.getElementById('bf-modal-cancel');
+  if (cancelBtn) cancelBtn.textContent = 'Batal';
   document.getElementById('bf-modal-overlay').style.display='flex';
 }
 function bfCloseSaveModal(){ document.getElementById('bf-modal-overlay').style.display='none'; }
 
 async function bfSaveToSheets(){
+  bfBuildLaporan(); // pastikan DOM (termasuk teks yang sudah diedit manual) sudah fresh
   const {traitSum,pct,level,jawabanTerskor} = bfHitung();
   const id = bfIdentitas();
   const statusEl = document.getElementById('bf-modal-status');
   const btn = document.getElementById('btn-bf-save');
+  const teksInterp = t => document.getElementById('bfl-interp-'+t)?.innerText || BF_INTERPRETASI[t][level[t]];
+  const teksNarasi = document.getElementById('bfl-narasi')?.innerText || '';
   const headers = [
     'timestamp','tes','token','nama','pendidikan','sekolah','kelas','tgl_lahir','tgl_tes','jenis_kelamin',
     'psikolog','asessor','jenis_pengisian',
@@ -4367,7 +4426,7 @@ async function bfSaveToSheets(){
     'pct_e','pct_a','pct_c','pct_n','pct_o',
     'level_e','level_a','level_c','level_n','level_o',
     'interpretasi_e','interpretasi_a','interpretasi_c','interpretasi_n','interpretasi_o',
-    'catatan',
+    'ringkasan_profil','catatan',
   ];
   for (let i=1;i<=44;i++) headers.push('jawaban_'+i);
   const values = [
@@ -4377,8 +4436,8 @@ async function bfSaveToSheets(){
     traitSum.E, traitSum.A, traitSum.C, traitSum.N, traitSum.O,
     pct.E, pct.A, pct.C, pct.N, pct.O,
     level.E, level.A, level.C, level.N, level.O,
-    BF_INTERPRETASI.E[level.E], BF_INTERPRETASI.A[level.A], BF_INTERPRETASI.C[level.C], BF_INTERPRETASI.N[level.N], BF_INTERPRETASI.O[level.O],
-    'Diisi manual dari lembar jawaban kertas',
+    teksInterp('E'), teksInterp('A'), teksInterp('C'), teksInterp('N'), teksInterp('O'),
+    teksNarasi, 'Diisi manual dari lembar jawaban kertas',
     ...jawabanTerskor
   ];
   btn.disabled = true; btn.textContent = 'Menyimpan...';
@@ -4387,11 +4446,24 @@ async function bfSaveToSheets(){
       method:'POST', headers:{'Content-Type':'text/plain'},
       body: JSON.stringify({ tes:'BIGFIVE', sheet_name:'HASIL_BIGFIVE', headers, values }),
     });
-    const result = await resp.json();
+    const raw = await resp.text();
+    let result;
+    try { result = JSON.parse(raw); }
+    catch(parseErr) {
+      // Apps Script kadang membalas halaman HTML (redirect/error) alih-alih JSON meski datanya sudah tersimpan.
+      statusEl.style.display='block';
+      statusEl.style.background='#FCF6E8'; statusEl.style.color='#8B5E3C';
+      statusEl.textContent = '⚠️ Respons Google Apps Script tidak terbaca (bukan JSON) — data KEMUNGKINAN BESAR tetap tersimpan. Cek langsung di sheet HASIL_BIGFIVE untuk memastikan.';
+      const cancelBtn = document.getElementById('bf-modal-cancel');
+      if (cancelBtn) cancelBtn.textContent = '✓ Tutup';
+      return;
+    }
     statusEl.style.display='block';
     if (result.status==='ok') {
       statusEl.style.background='#EAF5EE'; statusEl.style.color='#2E7D4F';
       statusEl.textContent = '✅ Tersimpan ke Google Sheets.';
+      const cancelBtn = document.getElementById('bf-modal-cancel');
+      if (cancelBtn) cancelBtn.textContent = '✓ Tutup';
     } else throw new Error(result.message||'gagal');
   } catch(err) {
     statusEl.style.display='block';
@@ -4448,6 +4520,10 @@ const GB_DIM_NAMES = {V:'Visual', A:'Auditori', K:'Kinestetik'};
 const GB_DIM_MAX = {V:12, A:12, K:12};
 
 let gbAnswers = {};
+let gbEdited = {narasi:false, saran:false};
+
+function gbMarkEdited(key){ gbEdited[key] = true; }
+function gbResetField(key){ gbEdited[key] = false; gbBuildLaporan(); }
 
 function gbRenderForm(){
   const cont = document.getElementById('gb-items');
@@ -4539,9 +4615,9 @@ const GB_SARAN = {
   K: 'Belajar paling efektif lewat praktik langsung, gerakan, dan pengalaman nyata (eksperimen, permainan peran, alat peraga). Sesi belajar sebaiknya diselingi jeda gerak.',
 };
 
-function gbBuildLaporan(){
+function gbBuildLaporan(idOverride){
   const {skor,dominanText} = gbHitung();
-  const id = gbIdentitas();
+  const id = idOverride || gbIdentitas();
 
   document.getElementById('gbl-nama').textContent = id.nama || '—';
   document.getElementById('gbl-sekolah').textContent = (id.sekolah||'—') + (id.kelas ? ' / '+id.kelas : '');
@@ -4562,10 +4638,10 @@ function gbBuildLaporan(){
   }).join('');
 
   document.getElementById('gbl-dominan-title').textContent = 'Gaya Belajar Dominan: '+dominanText;
-  document.getElementById('gbl-narasi').innerHTML = `${id.nama||'Peserta'} menunjukkan kecenderungan gaya belajar <strong>${dominanText}</strong> berdasarkan skor tertinggi pada profil VAK di atas. Kecenderungan ini menunjukkan cara paling efektif bagi ${id.nama||'peserta'} dalam menyerap dan mengolah informasi baru.`;
+  if (!gbEdited.narasi) document.getElementById('gbl-narasi').innerHTML = `${id.nama||'Peserta'} menunjukkan kecenderungan gaya belajar <strong>${dominanText}</strong> berdasarkan skor tertinggi pada profil VAK di atas. Kecenderungan ini menunjukkan cara paling efektif bagi ${id.nama||'peserta'} dalam menyerap dan mengolah informasi baru.`;
 
   const dimKeys = dominanText.split(' & ').map(nm => Object.keys(GB_DIM_NAMES).find(k=>GB_DIM_NAMES[k]===nm)).filter(Boolean);
-  document.getElementById('gbl-saran').textContent = dimKeys.map(k=>GB_SARAN[k]).join(' ');
+  if (!gbEdited.saran) document.getElementById('gbl-saran').innerHTML = dimKeys.map(k=>GB_SARAN[k]).join(' ');
 }
 
 function gbPrintLaporan(){
@@ -4584,21 +4660,26 @@ function gbPrintLaporan(){
 function gbOpenSaveModal(){
   showPanel('p-gayabelajar-lap', document.querySelectorAll('.tab')[6]);
   gbBuildLaporan();
+  const cancelBtn = document.getElementById('gb-modal-cancel');
+  if (cancelBtn) cancelBtn.textContent = 'Batal';
   document.getElementById('gb-modal-overlay').style.display='flex';
 }
 function gbCloseSaveModal(){ document.getElementById('gb-modal-overlay').style.display='none'; }
 
 async function gbSaveToSheets(){
+  gbBuildLaporan(); // pastikan DOM (termasuk hasil edit manual) sudah fresh
   const {skor,dominanText,jawabanList} = gbHitung();
   const id = gbIdentitas();
   const statusEl = document.getElementById('gb-modal-status');
   const btn = document.getElementById('btn-gb-save');
-  const headers = ['timestamp','tes','nama','sekolah','kelas','tgl_lahir','tgl_tes','jenis_kelamin','psikolog','asessor','jenis_pengisian','skor_visual','skor_auditori','skor_kinestetik','gaya_dominan','catatan'];
+  const teksNarasi = document.getElementById('gbl-narasi')?.innerText || '';
+  const teksSaran  = document.getElementById('gbl-saran')?.innerText || '';
+  const headers = ['timestamp','tes','nama','sekolah','kelas','tgl_lahir','tgl_tes','jenis_kelamin','psikolog','asessor','jenis_pengisian','skor_visual','skor_auditori','skor_kinestetik','gaya_dominan','narasi','saran','catatan'];
   for (let i=1;i<=36;i++) headers.push('jawaban_'+i);
   const values = [
     new Date().toISOString(), 'GAYABELAJAR', id.nama, id.sekolah||'', id.kelas||'', id.tgl_lahir||'', id.tgl_tes||'', id.jk||'',
     getPsikolog(), getAsessorAktif(), 'Manual',
-    skor.V, skor.A, skor.K, dominanText, 'Diisi manual dari lembar jawaban kertas',
+    skor.V, skor.A, skor.K, dominanText, teksNarasi, teksSaran, 'Diisi manual dari lembar jawaban kertas',
     ...jawabanList
   ];
   btn.disabled = true; btn.textContent = 'Menyimpan...';
@@ -4607,11 +4688,23 @@ async function gbSaveToSheets(){
       method:'POST', headers:{'Content-Type':'text/plain'},
       body: JSON.stringify({ tes:'GAYABELAJAR', sheet_name:'HASIL_GAYABELAJAR', headers, values }),
     });
-    const result = await resp.json();
+    const raw = await resp.text();
+    let result;
+    try { result = JSON.parse(raw); }
+    catch(parseErr) {
+      statusEl.style.display='block';
+      statusEl.style.background='#FCF6E8'; statusEl.style.color='#8B5E3C';
+      statusEl.textContent = '⚠️ Respons Google Apps Script tidak terbaca (bukan JSON) — data KEMUNGKINAN BESAR tetap tersimpan. Cek langsung di sheet HASIL_GAYABELAJAR untuk memastikan.';
+      const cancelBtn = document.getElementById('gb-modal-cancel');
+      if (cancelBtn) cancelBtn.textContent = '✓ Tutup';
+      return;
+    }
     statusEl.style.display='block';
     if (result.status==='ok') {
       statusEl.style.background='#EAF5EE'; statusEl.style.color='#2E7D4F';
       statusEl.textContent = '✅ Tersimpan ke Google Sheets.';
+      const cancelBtn = document.getElementById('gb-modal-cancel');
+      if (cancelBtn) cancelBtn.textContent = '✓ Tutup';
     } else throw new Error(result.message||'gagal');
   } catch(err) {
     statusEl.style.display='block';
@@ -4620,6 +4713,92 @@ async function gbSaveToSheets(){
   } finally {
     btn.disabled=false; btn.textContent='💾 Simpan Sekarang';
   }
+}
+
+// ── Lihat data Big Five yang sudah tersimpan (cari via GViz, sama seperti panel Cetak Laporan) ──
+async function bfCariData(){
+  const q = (document.getElementById('bf-cari-nama').value||'').trim().toLowerCase();
+  const hasilEl = document.getElementById('bf-cari-hasil');
+  hasilEl.innerHTML = '<div style="font-size:11px;color:var(--ink-s)">⏳ Mencari...</div>';
+  try {
+    const rows = await cetFetchSheet('HASIL_BIGFIVE');
+    const cocok = rows.filter(r => !q || String(r.nama).toLowerCase().includes(q)).reverse().slice(0,15);
+    if (!cocok.length) { hasilEl.innerHTML = '<div style="font-size:11px;color:var(--ink-s)">Tidak ada data ditemukan.</div>'; return; }
+    window._bfHasilCari = cocok;
+    hasilEl.innerHTML = cocok.map((r,i)=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;margin-bottom:6px;font-size:11px">
+        <span><strong>${r.nama}</strong> — ${r.sekolah||'-'} / ${r.kelas||'-'} · ${r.tgl_tes||'-'} <span style="color:var(--ink-s)">(${r.jenis_pengisian||'—'})</span></span>
+        <button class="btn-o" style="padding:4px 12px;font-size:10px" onclick="bfTampilkanDariDataIdx(${i})">Buka →</button>
+      </div>
+    `).join('');
+  } catch(err) {
+    hasilEl.innerHTML = '<div style="font-size:11px;color:#904040">Gagal mengambil data: '+err.message+'</div>';
+  }
+}
+
+function bfTampilkanDariDataIdx(i){ bfTampilkanDariData(window._bfHasilCari[i]); }
+
+function bfTampilkanDariData(record){
+  bfAnswers = {};
+  BF_ITEMS.forEach((it,idx)=>{
+    const skor = parseInt(record['jawaban_'+(idx+1)]);
+    if (!isNaN(skor) && skor>0) bfAnswers[idx] = it.reverse ? (6-skor) : skor;
+  });
+  bfEdited = {narasi:false, E:false, A:false, C:false, N:false, O:false};
+  bfRenderForm();
+  const idOverride = {
+    nama: record.nama||'', sekolah: record.sekolah||'', kelas: record.kelas||'',
+    tgl_lahir: record.tgl_lahir||'', tgl_tes: record.tgl_tes||'', jk: record.jenis_kelamin||'',
+  };
+  bfBuildLaporan(idOverride);
+  // Kalau narasi/interpretasi sudah pernah diedit manual & tersimpan, tampilkan versi itu (bukan hasil generate ulang)
+  if (record.ringkasan_profil) { document.getElementById('bfl-narasi').innerHTML = record.ringkasan_profil; bfEdited.narasi = true; }
+  ['E','A','C','N','O'].forEach(t=>{
+    const val = record['interpretasi_'+t.toLowerCase()];
+    if (val) { const el = document.getElementById('bfl-interp-'+t); if (el) el.innerHTML = val; bfEdited[t] = true; }
+  });
+  showPanel('p-bigfive-lap', document.querySelectorAll('.tab')[5]);
+}
+
+// ── Lihat data Gaya Belajar yang sudah tersimpan ──
+async function gbCariData(){
+  const q = (document.getElementById('gb-cari-nama').value||'').trim().toLowerCase();
+  const hasilEl = document.getElementById('gb-cari-hasil');
+  hasilEl.innerHTML = '<div style="font-size:11px;color:var(--ink-s)">⏳ Mencari...</div>';
+  try {
+    const rows = await cetFetchSheet('HASIL_GAYABELAJAR');
+    const cocok = rows.filter(r => !q || String(r.nama).toLowerCase().includes(q)).reverse().slice(0,15);
+    if (!cocok.length) { hasilEl.innerHTML = '<div style="font-size:11px;color:var(--ink-s)">Tidak ada data ditemukan.</div>'; return; }
+    window._gbHasilCari = cocok;
+    hasilEl.innerHTML = cocok.map((r,i)=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;margin-bottom:6px;font-size:11px">
+        <span><strong>${r.nama}</strong> — ${r.sekolah||'-'} / ${r.kelas||'-'} · ${r.tgl_tes||'-'} <span style="color:var(--ink-s)">(${r.jenis_pengisian||'—'})</span></span>
+        <button class="btn-o" style="padding:4px 12px;font-size:10px" onclick="gbTampilkanDariDataIdx(${i})">Buka →</button>
+      </div>
+    `).join('');
+  } catch(err) {
+    hasilEl.innerHTML = '<div style="font-size:11px;color:#904040">Gagal mengambil data: '+err.message+'</div>';
+  }
+}
+
+function gbTampilkanDariDataIdx(i){ gbTampilkanDariData(window._gbHasilCari[i]); }
+
+function gbTampilkanDariData(record){
+  gbAnswers = {};
+  GB_ITEMS.forEach((it,idx)=>{
+    const val = record['jawaban_'+(idx+1)];
+    if (val==='Ya' || val==='Tidak') gbAnswers[idx] = val;
+  });
+  gbEdited = {narasi:false, saran:false};
+  gbRenderForm();
+  const idOverride = {
+    nama: record.nama||'', sekolah: record.sekolah||'', kelas: record.kelas||'',
+    tgl_lahir: record.tgl_lahir||'', tgl_tes: record.tgl_tes||'', jk: record.jenis_kelamin||'',
+  };
+  gbBuildLaporan(idOverride);
+  if (record.narasi) { document.getElementById('gbl-narasi').innerHTML = record.narasi; gbEdited.narasi = true; }
+  if (record.saran)  { document.getElementById('gbl-saran').innerHTML  = record.saran;  gbEdited.saran  = true; }
+  showPanel('p-gayabelajar-lap', document.querySelectorAll('.tab')[6]);
 }
 
 // Render awal begitu dokumen selesai dimuat

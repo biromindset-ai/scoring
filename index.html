@@ -132,6 +132,12 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
   body.print-nst #cet-form-area{display:none!important}
   body.print-nst #cet-preview-nst{display:block!important}
   body.print-nst #cet-preview-nst .lap-wrap{display:block!important}
+  /* Big Five print */
+  body.print-bigfive .wrap>#p-bigfive-lap{display:block!important}
+  body.print-bigfive #p-bigfive-lap .lap-wrap{display:block!important}
+  /* Gaya Belajar print */
+  body.print-gayabelajar .wrap>#p-gayabelajar-lap{display:block!important}
+  body.print-gayabelajar #p-gayabelajar-lap .lap-wrap{display:block!important}
   /* Sertifikat print */
   body.print-sert .hdr{display:none!important}
   body.print-sert .wrap{max-width:none!important;padding:0!important;margin:0!important;width:100%!important}
@@ -329,6 +335,22 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 .kl.r{background:#E8F0F8;color:#3A6894}
 .kl.db{background:#FBF1E8;color:#8B5E3C}
 .kl.rd{background:#FCECEA;color:#904040}
+.kl.tinggi{background:var(--mauve-p);color:var(--mauve-d)}
+.kl.sedang{background:#E8F0F8;color:#3A6894}
+.kl.rendah{background:#FBF1E8;color:#8B5E3C}
+
+/* ITEM LIST — Big Five (Likert 5) & Gaya Belajar (Ya/Tidak) */
+.lk-list{border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.lk-item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-bottom:1px solid var(--rule);font-size:11.5px}
+.lk-item:last-child{border-bottom:none}
+.lk-item:nth-child(even){background:#FBF9FA}
+.lk-no{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-s);width:22px;flex-shrink:0}
+.lk-text{flex:1;color:var(--ink-m)}
+.lk-opts{display:flex;gap:5px;flex-shrink:0}
+.lk-btn{min-width:30px;height:28px;padding:0 6px;border-radius:6px;border:1.5px solid var(--rule);background:white;cursor:pointer;font-size:9.5px;font-family:'DM Sans',sans-serif;color:var(--ink-m);transition:all .12s;white-space:nowrap}
+.lk-btn:hover{border-color:var(--mauve-l)}
+.lk-btn.sel{background:var(--mauve);border-color:var(--mauve);color:white;font-weight:600}
+.lk-item.unanswered{background:#FCF6E8}
 </style>
 </head>
 <body>
@@ -345,6 +367,8 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
     <button class="tab" onclick="showPanel('p-nst',this)">③ NST Scoring</button>
     <button class="tab" onclick="showPanel('p-sertifikat',this)">④ Sertifikat</button>
     <button class="tab" onclick="showPanel('p-cetak-laporan',this)">⑤ Cetak Laporan</button>
+    <button class="tab" onclick="showPanel('p-bigfive',this)">⑥ Big Five</button>
+    <button class="tab" onclick="showPanel('p-gayabelajar',this)">⑦ Gaya Belajar</button>
     <button class="tab" onclick="showPanel('p-settings',this)" style="margin-left:12px;border:1.5px solid var(--mauve-l)">⚙ Settings</button>
   </nav>
 </header>
@@ -399,8 +423,6 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
             <option>TK A</option><option>TK B</option>
             <option>Klas 1</option><option>Klas 2</option><option>Klas 3</option>
             <option>Klas 4</option><option>Klas 5</option><option>Klas 6</option>
-            <option>Klas 7A</option><option>Klas 7B</option><option>Klas 7C</option>
-            <option>Klas 7D</option><option>Klas 7E</option>
           </select>
         </div>
         <div class="f">
@@ -1083,6 +1105,291 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
   </div><!-- end nst-lap-page -->
 </div><!-- end p-nst-lap -->
 
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- ══ PANEL 7: BIG FIVE SCORING (MANUAL) ══ -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="p-bigfive" class="panel">
+
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Identitas Peserta</span>
+      <span class="badge">Dari tab ① Identitas</span>
+      <button class="btn-o" onclick="showPanel('p-id', document.querySelectorAll('.tab')[0])" style="margin-left:auto;padding:6px 14px;font-size:11px">✏️ Edit di Tab Identitas</button>
+    </div>
+    <div class="card-body">
+      <div style="background:var(--mauve-p);border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--ink-m)">
+        ℹ Data peserta diambil otomatis dari tab <strong>① Identitas</strong>. Gunakan panel ini untuk transkrip skor <strong>Big Five (BFI-44)</strong> dari lembar jawaban kertas (pengisian manual).
+      </div>
+      <div id="bf-id-preview" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div style="background:white;border:1px solid var(--rule);border-radius:6px;padding:10px">
+          <div style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-s);margin-bottom:3px">Nama</div>
+          <div id="bf-prev-nama" style="font-size:12px;font-weight:600;color:var(--ink)">—</div>
+        </div>
+        <div style="background:white;border:1px solid var(--rule);border-radius:6px;padding:10px">
+          <div style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-s);margin-bottom:3px">Sekolah</div>
+          <div id="bf-prev-sekolah" style="font-size:12px;font-weight:600;color:var(--ink)">—</div>
+        </div>
+        <div style="background:white;border:1px solid var(--rule);border-radius:6px;padding:10px">
+          <div style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-s);margin-bottom:3px">Kelas</div>
+          <div id="bf-prev-kelas" style="font-size:12px;font-weight:600;color:var(--ink)">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Input Jawaban — 44 Pernyataan BFI</span>
+      <span class="badge" id="bf-progress">0 / 44 terisi</span>
+    </div>
+    <div class="card-body">
+      <div style="font-size:10.5px;color:var(--ink-s);margin-bottom:10px">Skala: <strong>STS</strong> Sangat Tidak Sesuai · <strong>TS</strong> Tidak Sesuai · <strong>N</strong> Netral · <strong>S</strong> Sesuai · <strong>SS</strong> Sangat Sesuai</div>
+      <div class="lk-list" id="bf-items"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Hasil Skor per Trait (OCEAN)</span></div>
+    <div class="card-body">
+      <div class="sum-grid" id="bf-summary"></div>
+    </div>
+  </div>
+
+  <div style="padding-bottom:8px;display:flex;gap:10px;justify-content:space-between;align-items:center">
+    <button class="btn-o" onclick="konfirmasiBersihkanBF(this)" style="border-color:#F5C2C0;color:#904040">↺ Bersihkan Jawaban Big Five</button>
+    <div style="display:flex;gap:10px">
+      <button class="btn-o" onclick="bfOpenSaveModal()" style="background:#EAF5EE;color:#2E7D4F;border-color:#B4DCC4">💾 Simpan ke Google Sheets</button>
+      <button class="btn-p" onclick="bfBuildLaporan();showPanel('p-bigfive-lap',document.querySelectorAll('.tab')[5])">Lihat / Cetak Laporan →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PANEL: LAPORAN BIG FIVE ══ -->
+<div id="p-bigfive-lap" class="panel">
+  <div class="btn-bar">
+    <button class="btn-p" onclick="bfPrintLaporan()">🖨 Cetak / Simpan PDF</button>
+    <button class="btn-o" onclick="showPanel('p-bigfive',document.querySelectorAll('.tab')[5])">← Edit Input Big Five</button>
+    <button class="btn-o" onclick="bfOpenSaveModal()" style="background:#EAF5EE;color:#2E7D4F;border-color:#B4DCC4">💾 Simpan ke Google Sheets</button>
+    <span class="btn-note">Print → Save as PDF. Skala A4, matikan header/footer browser.</span>
+  </div>
+
+  <!-- MODAL SIMPAN BIG FIVE -->
+  <div id="bf-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:white;border-radius:12px;padding:28px 32px;width:540px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,0.2);font-family:'DM Sans',sans-serif">
+      <div style="font-size:16px;font-weight:600;color:#1C1A1E;margin-bottom:4px">💾 Simpan Data Big Five ke Google Sheets</div>
+      <div style="font-size:11px;color:#8A8090;margin-bottom:18px">Identitas peserta, skor per trait, dan 44 jawaban akan disimpan ke sheet <code>HASIL_BIGFIVE</code>.</div>
+      <div id="bf-modal-status" style="display:none;font-size:11px;padding:8px 12px;border-radius:6px;margin-bottom:14px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="bfCloseSaveModal()" style="padding:8px 18px;background:transparent;color:#7D3F5C;border:1.5px solid #D4A0B8;border-radius:7px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif">Batal</button>
+        <button onclick="bfSaveToSheets()" id="btn-bf-save" style="padding:8px 22px;background:#B5698A;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif">💾 Simpan Sekarang</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="lap-wrap" id="bf-lap-page">
+    <div class="spine"></div>
+    <div class="wm">Mindset</div>
+
+    <div class="l-hdr">
+      <div>
+        <div class="l-rtype">Laporan Psikologis — Kepribadian</div>
+        <div class="l-rtitle">Big Five <em>Inventory</em></div>
+        <div class="l-rsub">Biro Mindset · Layanan Psikologi Sekolah</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="l-lcirc"><img id="bf-lap-logo" src="" alt="Mindset"></div>
+        <div class="l-lname">Biro Mindset</div>
+      </div>
+    </div>
+
+    <div class="l-id">
+      <div class="l-idf"><div class="l-idlbl">Nama</div><div class="l-idval" id="bfl-nama">—</div></div>
+      <div class="l-idf"><div class="l-idlbl">Sekolah / Kelas</div><div class="l-idval" id="bfl-sekolah">—</div></div>
+      <div class="l-idf"><div class="l-idlbl">Tgl Lahir</div><div class="l-idval" id="bfl-lahir">—</div></div>
+      <div class="l-idf"><div class="l-idlbl">Tanggal Tes</div><div class="l-idval" id="bfl-tgltes">—</div></div>
+    </div>
+
+    <div class="l-sec"><span>Profil 5 Trait Kepribadian</span><div class="l-secl"></div></div>
+    <table class="l-pt">
+      <thead>
+        <tr><th>Trait</th><th style="width:50px;text-align:center">Skor</th><th style="width:140px">Profil</th><th style="width:70px;text-align:center">Persen</th><th style="width:80px">Tingkat</th></tr>
+      </thead>
+      <tbody id="bfl-tbody"></tbody>
+    </table>
+
+    <div class="sp16"></div>
+    <div class="l-sec"><span>Ringkasan Profil</span><div class="l-secl"></div></div>
+    <div class="l-nar">
+      <div class="l-nar-t">Gambaran Umum Kepribadian</div>
+      <div class="l-nar-p" id="bfl-narasi">—</div>
+    </div>
+
+    <div class="sp16"></div>
+    <div class="l-sec"><span>Interpretasi per Trait</span><div class="l-secl"></div></div>
+    <div id="bfl-trait-blocks"></div>
+
+    <div class="sp12"></div>
+    <div class="l-ttd" style="grid-template-columns:1fr">
+      <div>
+        <div class="l-ttd-lbl">Psikolog</div>
+        <div class="l-ttd-line"></div>
+        <div class="l-ttd-nm" id="bfl-psikolog">—</div>
+        <div class="l-ttd-sub">Biro Mindset · Layanan Psikologi Sekolah</div>
+      </div>
+    </div>
+
+    <div class="l-ft">
+      <div class="l-ftl">Dokumen rahasia — hanya untuk keperluan asesmen psikologis<br>© <span id="bfl-tahun">2026</span> Biro Mindset · Layanan Psikologi Sekolah</div>
+      <div class="l-ftr">Hal. 1 / 1</div>
+    </div>
+  </div>
+</div><!-- end p-bigfive-lap -->
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- ══ PANEL 8: GAYA BELAJAR SCORING (MANUAL) ══ -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="p-gayabelajar" class="panel">
+
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Identitas Peserta</span>
+      <span class="badge">Dari tab ① Identitas</span>
+      <button class="btn-o" onclick="showPanel('p-id', document.querySelectorAll('.tab')[0])" style="margin-left:auto;padding:6px 14px;font-size:11px">✏️ Edit di Tab Identitas</button>
+    </div>
+    <div class="card-body">
+      <div style="background:var(--mauve-p);border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--ink-m)">
+        ℹ Data peserta diambil otomatis dari tab <strong>① Identitas</strong>. Transkrip jawaban Ya/Tidak dari lembar <strong>Tes Gaya Belajar (VAK, 36 pernyataan)</strong>.
+      </div>
+      <div id="gb-id-preview" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div style="background:white;border:1px solid var(--rule);border-radius:6px;padding:10px">
+          <div style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-s);margin-bottom:3px">Nama</div>
+          <div id="gb-prev-nama" style="font-size:12px;font-weight:600;color:var(--ink)">—</div>
+        </div>
+        <div style="background:white;border:1px solid var(--rule);border-radius:6px;padding:10px">
+          <div style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-s);margin-bottom:3px">Sekolah</div>
+          <div id="gb-prev-sekolah" style="font-size:12px;font-weight:600;color:var(--ink)">—</div>
+        </div>
+        <div style="background:white;border:1px solid var(--rule);border-radius:6px;padding:10px">
+          <div style="font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-s);margin-bottom:3px">Kelas</div>
+          <div id="gb-prev-kelas" style="font-size:12px;font-weight:600;color:var(--ink)">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Input Jawaban — 36 Pernyataan VAK</span>
+      <span class="badge" id="gb-progress">0 / 36 terisi</span>
+    </div>
+    <div class="card-body">
+      <div class="lk-list" id="gb-items"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Hasil Skor per Dimensi</span></div>
+    <div class="card-body">
+      <div class="sum-grid" id="gb-summary" style="grid-template-columns:repeat(3,1fr)"></div>
+      <div style="margin-top:12px;background:var(--mauve-p);border-radius:7px;padding:12px 14px;text-align:center">
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;color:var(--mauve);text-transform:uppercase;margin-bottom:3px">Gaya Belajar Dominan</div>
+        <div id="gb-dominan" style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--mauve-d)">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding-bottom:8px;display:flex;gap:10px;justify-content:space-between;align-items:center">
+    <button class="btn-o" onclick="konfirmasiBersihkanGB(this)" style="border-color:#F5C2C0;color:#904040">↺ Bersihkan Jawaban Gaya Belajar</button>
+    <div style="display:flex;gap:10px">
+      <button class="btn-o" onclick="gbOpenSaveModal()" style="background:#EAF5EE;color:#2E7D4F;border-color:#B4DCC4">💾 Simpan ke Google Sheets</button>
+      <button class="btn-p" onclick="gbBuildLaporan();showPanel('p-gayabelajar-lap',document.querySelectorAll('.tab')[6])">Lihat / Cetak Laporan →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PANEL: LAPORAN GAYA BELAJAR ══ -->
+<div id="p-gayabelajar-lap" class="panel">
+  <div class="btn-bar">
+    <button class="btn-p" onclick="gbPrintLaporan()">🖨 Cetak / Simpan PDF</button>
+    <button class="btn-o" onclick="showPanel('p-gayabelajar',document.querySelectorAll('.tab')[6])">← Edit Input Gaya Belajar</button>
+    <button class="btn-o" onclick="gbOpenSaveModal()" style="background:#EAF5EE;color:#2E7D4F;border-color:#B4DCC4">💾 Simpan ke Google Sheets</button>
+    <span class="btn-note">Print → Save as PDF. Skala A4, matikan header/footer browser.</span>
+  </div>
+
+  <!-- MODAL SIMPAN GAYA BELAJAR -->
+  <div id="gb-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:white;border-radius:12px;padding:28px 32px;width:540px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,0.2);font-family:'DM Sans',sans-serif">
+      <div style="font-size:16px;font-weight:600;color:#1C1A1E;margin-bottom:4px">💾 Simpan Data Gaya Belajar ke Google Sheets</div>
+      <div style="font-size:11px;color:#8A8090;margin-bottom:18px">Identitas peserta, skor 3 dimensi, dan 36 jawaban akan disimpan ke sheet <code>HASIL_GAYABELAJAR</code>.</div>
+      <div id="gb-modal-status" style="display:none;font-size:11px;padding:8px 12px;border-radius:6px;margin-bottom:14px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="gbCloseSaveModal()" style="padding:8px 18px;background:transparent;color:#7D3F5C;border:1.5px solid #D4A0B8;border-radius:7px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif">Batal</button>
+        <button onclick="gbSaveToSheets()" id="btn-gb-save" style="padding:8px 22px;background:#B5698A;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif">💾 Simpan Sekarang</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="lap-wrap" id="gb-lap-page">
+    <div class="spine"></div>
+    <div class="wm">Mindset</div>
+
+    <div class="l-hdr">
+      <div>
+        <div class="l-rtype">Laporan Psikologis — Gaya Belajar</div>
+        <div class="l-rtitle">Tes Gaya <em>Belajar</em></div>
+        <div class="l-rsub">Biro Mindset · Layanan Psikologi Sekolah · Instrumen VAK</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="l-lcirc"><img id="gb-lap-logo" src="" alt="Mindset"></div>
+        <div class="l-lname">Biro Mindset</div>
+      </div>
+    </div>
+
+    <div class="l-id">
+      <div class="l-idf"><div class="l-idlbl">Nama</div><div class="l-idval" id="gbl-nama">—</div></div>
+      <div class="l-idf"><div class="l-idlbl">Sekolah / Kelas</div><div class="l-idval" id="gbl-sekolah">—</div></div>
+      <div class="l-idf"><div class="l-idlbl">Tgl Lahir</div><div class="l-idval" id="gbl-lahir">—</div></div>
+      <div class="l-idf"><div class="l-idlbl">Tanggal Tes</div><div class="l-idval" id="gbl-tgltes">—</div></div>
+    </div>
+
+    <div class="l-sec"><span>Profil 3 Dimensi Gaya Belajar (VAK)</span><div class="l-secl"></div></div>
+    <table class="l-pt">
+      <thead>
+        <tr><th>Dimensi</th><th style="width:60px;text-align:center">Skor</th><th style="width:160px">Profil</th><th style="width:70px;text-align:center">Persen</th></tr>
+      </thead>
+      <tbody id="gbl-tbody"></tbody>
+    </table>
+
+    <div class="sp16"></div>
+    <div class="l-sec"><span>Gaya Belajar Dominan</span><div class="l-secl"></div></div>
+    <div class="l-nar">
+      <div class="l-nar-t" id="gbl-dominan-title">—</div>
+      <div class="l-nar-p" id="gbl-narasi">—</div>
+    </div>
+
+    <div class="sp16"></div>
+    <div class="l-sec"><span>Rekomendasi Belajar</span><div class="l-secl"></div></div>
+    <div class="l-rg" style="grid-template-columns:1fr">
+      <div class="l-rc"><div class="l-rh"><div class="l-rdot"></div><div class="l-rtit">Saran Praktis</div></div><div class="l-rp" id="gbl-saran">—</div></div>
+    </div>
+
+    <div class="sp12"></div>
+    <div class="l-ttd" style="grid-template-columns:1fr">
+      <div>
+        <div class="l-ttd-lbl">Psikolog</div>
+        <div class="l-ttd-line"></div>
+        <div class="l-ttd-nm" id="gbl-psikolog">—</div>
+        <div class="l-ttd-sub">Biro Mindset · Layanan Psikologi Sekolah</div>
+      </div>
+    </div>
+
+    <div class="l-ft">
+      <div class="l-ftl">Dokumen rahasia — hanya untuk keperluan asesmen psikologis<br>© <span id="gbl-tahun">2026</span> Biro Mindset · Layanan Psikologi Sekolah</div>
+      <div class="l-ftr">Hal. 1 / 1</div>
+    </div>
+  </div>
+</div><!-- end p-gayabelajar-lap -->
+
 
 <!-- ══════════════════════════════════════════════════════════ -->
 <!-- ══ PANEL 6: SETTINGS ══ -->
@@ -1541,9 +1848,10 @@ let APP_SETTING = {
   tagline:      'Layanan Psikologi Sekolah',
   psikolog:     'Dini Santiko Budi Sp.Psi, psikolog',
   sipp:         '2/0340/05/SRIPP/03',
-  asessor_aktif:'',
-  asessor_list: ['Tasya','Vivi','Sherly','Dini','Susi','Andri'],
+  asessor_aktif:'Tasya',
+  asessor_list: ['Tasya','Vivi','Sherly'],
   sekolah:      ['Daarusshofa','Darul Quran','Darul Habib','Cordova'],
+  kelas:        ['TK A','TK B','Klas 1','Klas 2','Klas 3','Klas 4','Klas 5','Klas 6'],
   footer_text:  'Dokumen rahasia — untuk keperluan bimbingan psikologis sekolah',
   tahun:        '2026',
 };
@@ -1676,7 +1984,7 @@ function lookupNSTSheetTotal(totalRaw) {
 
 // ── INIT ────────────────────────────────────────────────────────
 window.onload = function() {
-  document.querySelectorAll('#hdr-logo-img,#lap-logo,#nst-lap-logo').forEach(i=>i.src=LOGO);
+  document.querySelectorAll('#hdr-logo-img,#lap-logo,#nst-lap-logo,#bf-lap-logo,#gb-lap-logo').forEach(i=>i.src=LOGO);
   buildTKD1();
   buildMC('mc2', 40, KEYS[2]);
   buildMC('mc3', 40, KEYS[3]);
@@ -1882,7 +2190,21 @@ function syncNSTPreview() {
 
 function sync() {
   syncNSTPreview();
+  syncBFGBPreview();
   // just keep identity in sync for live laporan
+}
+
+function syncBFGBPreview() {
+  const el = id => document.getElementById(id);
+  const nama = el('nama')?.value || '—';
+  const sekolah = el('sekolah')?.value || '—';
+  const kelas = el('kelas')?.value || '—';
+  if (el('bf-prev-nama'))    el('bf-prev-nama').textContent    = nama;
+  if (el('bf-prev-sekolah')) el('bf-prev-sekolah').textContent = sekolah;
+  if (el('bf-prev-kelas'))   el('bf-prev-kelas').textContent   = kelas;
+  if (el('gb-prev-nama'))    el('gb-prev-nama').textContent    = nama;
+  if (el('gb-prev-sekolah')) el('gb-prev-sekolah').textContent = sekolah;
+  if (el('gb-prev-kelas'))   el('gb-prev-kelas').textContent   = kelas;
 }
 
 // ── PANEL SWITCH ───────────────────────────────────────────────
@@ -1892,6 +2214,7 @@ function showPanel(id, btn) {
   document.getElementById(id).classList.add('on');
   if (btn) btn.classList.add('on');
   if (id==='p-nst') syncNSTPreview();
+  if (id==='p-bigfive' || id==='p-gayabelajar') syncBFGBPreview();
 }
 
 // ── JENIS TES ───────────────────────────────────────────────────
@@ -2847,6 +3170,19 @@ function settingsApplyToUI() {
     if (curVal) selSekolah.value = curVal;
   }
 
+  // Dropdown kelas — sama seperti sekolah, diisi dari GSheets (setting: kelas_1, kelas_2, ...)
+  const selKelas = document.getElementById('kelas');
+  if (selKelas && s.kelas && s.kelas.length) {
+    const curVal = selKelas.value;
+    selKelas.innerHTML = '<option value="">— Pilih Kelas —</option>';
+    s.kelas.forEach(nama => {
+      const opt = document.createElement('option');
+      opt.value = nama; opt.textContent = nama;
+      selKelas.appendChild(opt);
+    });
+    if (curVal) selKelas.value = curVal;
+  }
+
   // Dropdown asessor di panel IDENTITAS — diisi dari GSheets
   const selAsessor = document.getElementById('asessor');
   if (selAsessor) {
@@ -3766,6 +4102,525 @@ function initCetakPreviewMove() {
     pNST.remove();
   }
 }
+
+
+// ══════════════════════════════════════════════════════════
+// BIG FIVE — SCORING MANUAL (BFI-44)
+// ══════════════════════════════════════════════════════════
+const BF_ITEMS = [
+  {n:1,  text:'Aktif Berbicara', trait:'E', reverse:false},
+  {n:2,  text:'Mencari Kelemahan Orang Lain', trait:'A', reverse:true},
+  {n:3,  text:'Mengerjakan Tugas dengan Serius', trait:'C', reverse:false},
+  {n:4,  text:'Merasa Tertekan', trait:'N', reverse:false},
+  {n:5,  text:'Orang Unik yang Penuh dengan Gagasan Baru', trait:'O', reverse:false},
+  {n:6,  text:'Suka Menyendiri', trait:'E', reverse:true},
+  {n:7,  text:'Suka Menolong dan Tidak Iri pada Orang Lain', trait:'A', reverse:false},
+  {n:8,  text:'Bertindak Asal-asalan', trait:'C', reverse:true},
+  {n:9,  text:'Orang yang Santai dan Mampu Mengatasi Stres', trait:'N', reverse:true},
+  {n:10, text:'Memiliki Rasa Ingin Tahu Terhadap Sesuatu yang Berbeda', trait:'O', reverse:false},
+  {n:11, text:'Penuh Tenaga', trait:'E', reverse:false},
+  {n:12, text:'Berselisih dengan Orang Lain', trait:'A', reverse:true},
+  {n:13, text:'Pekerja yang Dapat Diandalkan', trait:'C', reverse:false},
+  {n:14, text:'Mudah Merasa Tegang', trait:'N', reverse:false},
+  {n:15, text:'Orang Yang Berbakat dan Pemikir', trait:'O', reverse:false},
+  {n:16, text:'Dapat Membangkitkan Kegembiraan', trait:'E', reverse:false},
+  {n:17, text:'Mudah Memaafkan', trait:'A', reverse:false},
+  {n:18, text:'Cenderung Berkerja Tidak Teratur', trait:'C', reverse:true},
+  {n:19, text:'Terlalu Sering Khawatir', trait:'N', reverse:false},
+  {n:20, text:'Memiliki Imajinasi yang Aktif', trait:'O', reverse:false},
+  {n:21, text:'Cenderung Pendiam', trait:'E', reverse:true},
+  {n:22, text:'Secara Umum Dapat Dipercaya', trait:'A', reverse:false},
+  {n:23, text:'Cenderung Pemalas', trait:'C', reverse:true},
+  {n:24, text:'Memiliki Perasaan yang Stabil dan Tidak Mudah Sedih', trait:'N', reverse:true},
+  {n:25, text:'Kreatif', trait:'O', reverse:false},
+  {n:26, text:'Terbuka', trait:'E', reverse:false},
+  {n:27, text:'Dingin dan Kurang Bersahabat', trait:'A', reverse:true},
+  {n:28, text:'Dapat Memusatkan Diri Pada Pekerjaan', trait:'C', reverse:false},
+  {n:29, text:'Dipengaruhi Oleh Suasana Hati', trait:'N', reverse:false},
+  {n:30, text:'Menyukai Artistik dan Estetika', trait:'O', reverse:false},
+  {n:31, text:'Orang Yang Pemalu', trait:'E', reverse:true},
+  {n:32, text:'Ramah dan Penuh Perhatian', trait:'A', reverse:false},
+  {n:33, text:'Melakukan Sesuatu dengan Efisien', trait:'C', reverse:false},
+  {n:34, text:'Merasa Tenang Meski dalam Situasi Menegangkan', trait:'N', reverse:true},
+  {n:35, text:'Menyukai Pekerjaan Yang Rutin', trait:'O', reverse:true},
+  {n:36, text:'Suka Bergaul', trait:'E', reverse:false},
+  {n:37, text:'Kadang Berperilaku Kasar', trait:'A', reverse:true},
+  {n:38, text:'Merencanakan Dan Memusatkan Pada Rencana Tersebut', trait:'C', reverse:false},
+  {n:39, text:'Mudah Merasa Cemas', trait:'N', reverse:false},
+  {n:40, text:'Merefleksi dan Mengolah Gagasan Baru', trait:'O', reverse:false},
+  {n:41, text:'Kurang Tertarik dengan Seni', trait:'O', reverse:true},
+  {n:42, text:'Menyukai Bekerjasama dengan Orang Lain', trait:'A', reverse:false},
+  {n:43, text:'Memiliki Perhatian yang Mudah Terpecah', trait:'C', reverse:true},
+  {n:44, text:'Memiliki Keahlian dalam Kesenian dan Literatur', trait:'O', reverse:false},
+];
+// Skala & kunci trait ini HARUS identik dengan BigFIve.html (versi online) agar hasil manual & online konsisten.
+const BF_OPTIONS = [
+  {label:'STS', full:'Sangat Tidak Sesuai', pos:1},
+  {label:'TS',  full:'Tidak Sesuai',        pos:2},
+  {label:'N',   full:'Netral',              pos:3},
+  {label:'S',   full:'Sesuai',              pos:4},
+  {label:'SS',  full:'Sangat Sesuai',       pos:5},
+];
+const BF_TRAIT_NAMES = {E:'Ekstraversion', A:'Agreeableness', C:'Conscientiousness', N:'Neuroticism', O:'Openness'};
+const BF_TRAIT_MAX   = {E:40, A:45, C:45, N:40, O:50};
+const BF_INTERPRETASI = {
+  E: {
+    Tinggi: 'Memiliki tingkat motivasi yang tinggi dalam bergaul, menjalin hubungan dengan sesama dan dominan dalam lingkungannya.',
+    Sedang: 'Tidak terlalu menonjol dalam menjalin hubungan dengan sesama meskipun tidak menarik diri dari lingkungannya.',
+    Rendah: 'Cenderung bersikap tenang dan menarik diri dari lingkungannya.',
+  },
+  A: {
+    Tinggi: 'Ramah, memiliki kepribadian yang selalu mengalah, menghindari konflik dan memiliki kecenderungan untuk mengikuti orang lain.',
+    Sedang: 'Tidak terlalu agresif meskipun tidak selalu mengalah pada orang lain.',
+    Rendah: 'Cenderung untuk lebih agresif dan kurang kooperatif.',
+  },
+  C: {
+    Tinggi: 'Memiliki kontrol terhadap lingkungan sosial, berpikir sebelum bertindak, menunda kepuasan, mengikuti peraturan dan norma, terencana, terorganisir, dan memprioritaskan tugas.',
+    Sedang: 'Terkadang ceroboh, namun dapat mengikuti peraturan dan norma.',
+    Rendah: 'Ceroboh, tidak terarah serta mudah teralih perhatiannya.',
+  },
+  N: {
+    Tinggi: 'Memiliki kesulitan dalam menjalin hubungan dan berkomitmen, juga memiliki tingkat self esteem yang rendah.',
+    Sedang: 'Dapat mengendalikan diri meskipun pada saat cemas.',
+    Rendah: 'Cenderung lebih gembira dan puas terhadap hidup.',
+  },
+  O: {
+    Tinggi: 'Mudah bertoleransi, memiliki kapasitas untuk menyerap informasi, menjadi sangat fokus dan mampu untuk waspada pada berbagai perasaan, pemikiran dan impulsivitas.',
+    Sedang: 'Memiliki pemikiran yang cukup terbuka dan tidak bermasalah terhadap perubahan.',
+    Rendah: 'Mempunyai pemikiran yang sempit, konservatif dan tidak menyukai adanya perubahan.',
+  },
+};
+
+let bfAnswers = {};
+
+function bfLevelDariPersen(pct){ if (pct<=33) return 'Rendah'; if (pct<=66) return 'Sedang'; return 'Tinggi'; }
+
+function bfRenderForm(){
+  const cont = document.getElementById('bf-items');
+  if (!cont) return;
+  cont.innerHTML = BF_ITEMS.map((it,idx) => {
+    const opts = BF_OPTIONS.map(o => `<button type="button" class="lk-btn${bfAnswers[idx]===o.pos?' sel':''}" title="${o.full}" onclick="bfPilih(${idx},${o.pos})">${o.label}</button>`).join('');
+    return `<div class="lk-item${bfAnswers[idx]?'':' unanswered'}" id="bf-row-${idx}">
+      <span class="lk-no">${it.n}</span>
+      <span class="lk-text">${it.text}</span>
+      <span class="lk-opts">${opts}</span>
+    </div>`;
+  }).join('');
+  bfUpdateProgress();
+}
+
+function bfPilih(idx,pos){
+  bfAnswers[idx]=pos;
+  const row = document.getElementById('bf-row-'+idx);
+  if (row) {
+    row.classList.remove('unanswered');
+    row.querySelectorAll('.lk-btn').forEach((b,i)=>b.classList.toggle('sel', BF_OPTIONS[i].pos===pos));
+  }
+  bfUpdateProgress();
+  bfHitung();
+}
+
+function bfUpdateProgress(){
+  const n = Object.keys(bfAnswers).length;
+  const el = document.getElementById('bf-progress');
+  if (el) el.textContent = n+' / 44 terisi';
+}
+
+function bfHitung(){
+  const traitSum = {E:0,A:0,C:0,N:0,O:0};
+  const jawabanTerskor = [];
+  BF_ITEMS.forEach((it,idx) => {
+    const pos = bfAnswers[idx];
+    const skor = pos ? (it.reverse ? (6-pos) : pos) : 0;
+    traitSum[it.trait]+=skor;
+    jawabanTerskor.push(skor);
+  });
+  const pct={}, level={};
+  Object.keys(traitSum).forEach(t=>{
+    pct[t] = Math.round((traitSum[t]/BF_TRAIT_MAX[t])*1000)/10;
+    level[t] = bfLevelDariPersen(pct[t]);
+  });
+  bfRenderSummary(traitSum,pct,level);
+  return {traitSum,pct,level,jawabanTerskor};
+}
+
+function bfRenderSummary(traitSum,pct,level){
+  const cont = document.getElementById('bf-summary');
+  if (!cont) return;
+  cont.innerHTML = Object.keys(traitSum).map(t=>{
+    const kl = level[t]==='Tinggi'?'tinggi':level[t]==='Sedang'?'sedang':'rendah';
+    return `<div class="sum-card">
+      <div class="sum-lbl">${t} — ${BF_TRAIT_NAMES[t]}</div>
+      <div class="sum-val">${traitSum[t]}<span style="font-size:11px;color:var(--ink-s)">/${BF_TRAIT_MAX[t]}</span></div>
+      <div class="sum-sub"><span class="kl ${kl}">${level[t]}</span> · ${pct[t]}%</div>
+    </div>`;
+  }).join('');
+}
+
+function konfirmasiBersihkanBF(btn){
+  if (btn.dataset.confirm==='1') {
+    bfAnswers = {};
+    bfRenderForm();
+    bfHitung();
+    btn.textContent = '↺ Bersihkan Jawaban Big Five';
+    btn.dataset.confirm = '0';
+  } else {
+    btn.textContent = '⚠ Klik sekali lagi untuk konfirmasi';
+    btn.dataset.confirm = '1';
+    setTimeout(()=>{ if (btn.dataset.confirm==='1'){ btn.textContent='↺ Bersihkan Jawaban Big Five'; btn.dataset.confirm='0'; } },3000);
+  }
+}
+
+function bfIdentitas(){
+  const el = id => document.getElementById(id);
+  return {
+    nama: el('nama')?.value || '',
+    sekolah: el('sekolah')?.value || '',
+    kelas: el('kelas')?.value || '',
+    tgl_lahir: el('tgl-lahir')?.value || '',
+    tgl_tes: el('tgl-tes')?.value || '',
+    jk: el('jk')?.value || '',
+  };
+}
+
+function bfFmtTgl(v){
+  if (!v) return '—';
+  if (v.includes('-') && v.length===10) {
+    const [y,m,d]=v.split('-');
+    const mn=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+    return `${d} ${mn[parseInt(m)-1]} ${y}`;
+  }
+  return v;
+}
+
+function bfBuildLaporan(){
+  const {traitSum,pct,level} = bfHitung();
+  const id = bfIdentitas();
+
+  document.getElementById('bfl-nama').textContent = id.nama || '—';
+  document.getElementById('bfl-sekolah').textContent = (id.sekolah||'—') + (id.kelas ? ' / '+id.kelas : '');
+  document.getElementById('bfl-lahir').textContent = bfFmtTgl(id.tgl_lahir);
+  document.getElementById('bfl-tgltes').textContent = bfFmtTgl(id.tgl_tes);
+  document.getElementById('bfl-psikolog').textContent = getPsikolog();
+  document.getElementById('bfl-tahun').textContent = APP_SETTING.tahun || new Date().getFullYear();
+
+  const colors = {E:'#B5698A',A:'#7B9EC0',C:'#B5698A',N:'#C4977A',O:'#B5698A'};
+  document.getElementById('bfl-tbody').innerHTML = Object.keys(traitSum).map(t=>{
+    const kl = level[t]==='Tinggi'?'tinggi':level[t]==='Sedang'?'sedang':'rendah';
+    return `<tr>
+      <td style="font-weight:500;color:var(--ink)">${BF_TRAIT_NAMES[t]}</td>
+      <td class="l-ss">${traitSum[t]}<span style="font-size:8px;color:var(--ink-s)">/${BF_TRAIT_MAX[t]}</span></td>
+      <td><div class="l-bar-t"><div class="l-bar-f" style="width:${pct[t]}%;background:${colors[t]}"></div></div></td>
+      <td style="text-align:center;font-weight:500">${pct[t]}%</td>
+      <td><span class="kl ${kl}">${level[t]}</span></td>
+    </tr>`;
+  }).join('');
+
+  const tinggi = Object.keys(traitSum).filter(t=>level[t]==='Tinggi').map(t=>BF_TRAIT_NAMES[t]);
+  const sedang = Object.keys(traitSum).filter(t=>level[t]==='Sedang').map(t=>BF_TRAIT_NAMES[t]);
+  const rendah = Object.keys(traitSum).filter(t=>level[t]==='Rendah').map(t=>BF_TRAIT_NAMES[t]);
+  let narasi = (id.nama||'Peserta') + ' menunjukkan profil kepribadian';
+  if (tinggi.length) narasi += ` dengan kecenderungan <strong>${tinggi.join(', ')}</strong> yang tinggi`;
+  if (sedang.length) narasi += `${tinggi.length?', diiringi':' dengan'} <strong>${sedang.join(', ')}</strong> pada level sedang`;
+  if (rendah.length) narasi += `${(tinggi.length||sedang.length)?', serta':' dengan'} <strong>${rendah.join(', ')}</strong> pada level rendah`;
+  narasi += '.';
+  document.getElementById('bfl-narasi').innerHTML = narasi;
+
+  document.getElementById('bfl-trait-blocks').innerHTML = Object.keys(traitSum).map(t=>{
+    const kl = level[t]==='Tinggi'?'tinggi':level[t]==='Sedang'?'sedang':'rendah';
+    return `<div class="l-trait-block">
+      <div class="l-trait-hd"><span class="l-trait-name">${BF_TRAIT_NAMES[t]}</span><span class="kl ${kl}">${level[t]}</span></div>
+      <div class="l-trait-p">${BF_INTERPRETASI[t][level[t]]}</div>
+    </div>`;
+  }).join('');
+}
+
+function bfPrintLaporan(){
+  bfBuildLaporan();
+  document.body.classList.add('print-bigfive');
+  const s=document.createElement('style'); s.id='page-orientation-bf';
+  s.textContent='@page{ size:A4 portrait; margin:0; }';
+  document.head.appendChild(s);
+  setTimeout(()=>{
+    window.print();
+    showPrintFallbackBanner();
+    setTimeout(()=>{ document.body.classList.remove('print-bigfive'); document.getElementById('page-orientation-bf')?.remove(); },1500);
+  },250);
+}
+
+function bfOpenSaveModal(){ document.getElementById('bf-modal-overlay').style.display='flex'; }
+function bfCloseSaveModal(){ document.getElementById('bf-modal-overlay').style.display='none'; }
+
+async function bfSaveToSheets(){
+  const {traitSum,pct,level,jawabanTerskor} = bfHitung();
+  const id = bfIdentitas();
+  const statusEl = document.getElementById('bf-modal-status');
+  const btn = document.getElementById('btn-bf-save');
+  const headers = [
+    'timestamp','tes','token','nama','pendidikan','sekolah','kelas','tgl_lahir','tgl_tes','jenis_kelamin',
+    'psikolog','asessor','jenis_pengisian',
+    'skor_e','skor_a','skor_c','skor_n','skor_o',
+    'pct_e','pct_a','pct_c','pct_n','pct_o',
+    'level_e','level_a','level_c','level_n','level_o',
+    'interpretasi_e','interpretasi_a','interpretasi_c','interpretasi_n','interpretasi_o',
+    'catatan',
+  ];
+  for (let i=1;i<=44;i++) headers.push('jawaban_'+i);
+  const values = [
+    new Date().toISOString(), 'BIGFIVE', '—',
+    id.nama, (id.sekolah||'')+(id.kelas?(' - '+id.kelas):''), id.sekolah||'', id.kelas||'', id.tgl_lahir||'', id.tgl_tes||'', id.jk||'',
+    getPsikolog(), getAsessorAktif(), 'Manual',
+    traitSum.E, traitSum.A, traitSum.C, traitSum.N, traitSum.O,
+    pct.E, pct.A, pct.C, pct.N, pct.O,
+    level.E, level.A, level.C, level.N, level.O,
+    BF_INTERPRETASI.E[level.E], BF_INTERPRETASI.A[level.A], BF_INTERPRETASI.C[level.C], BF_INTERPRETASI.N[level.N], BF_INTERPRETASI.O[level.O],
+    'Diisi manual dari lembar jawaban kertas',
+    ...jawabanTerskor
+  ];
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  try {
+    const resp = await fetch(SHEETS_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ tes:'BIGFIVE', sheet_name:'HASIL_BIGFIVE', headers, values }),
+    });
+    const result = await resp.json();
+    statusEl.style.display='block';
+    if (result.status==='ok') {
+      statusEl.style.background='#EAF5EE'; statusEl.style.color='#2E7D4F';
+      statusEl.textContent = '✅ Tersimpan ke Google Sheets.';
+    } else throw new Error(result.message||'gagal');
+  } catch(err) {
+    statusEl.style.display='block';
+    statusEl.style.background='#FAEAEA'; statusEl.style.color='#904040';
+    statusEl.textContent = '❌ Gagal menyimpan: '+err.message;
+  } finally {
+    btn.disabled=false; btn.textContent='💾 Simpan Sekarang';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// GAYA BELAJAR — SCORING MANUAL (VAK, 36 pernyataan)
+// ══════════════════════════════════════════════════════════
+const GB_ITEMS = [
+  {n:1,  text:'Saya lebih suka mendengarkan informasi daripada membaca', dim:'A'},
+  {n:2,  text:'Sebelum mengerjakan sesuatu, saya terlebih dahulu membaca instruksinya', dim:'V'},
+  {n:3,  text:'Saya lebih suka membaca daripada mendengarkan orang bicara', dim:'V'},
+  {n:4,  text:'Ketika sendirian, biasanya saya mendengarkan musik atau bernyanyi', dim:'A'},
+  {n:5,  text:'Saya lebih suka berolahraga daripada membaca buku', dim:'K'},
+  {n:6,  text:'Saya dapat menunjukkan arah utara/selatan di mana pun saya berada', dim:'V'},
+  {n:7,  text:'Saya suka menulis surat, jurnal, atau buku harian', dim:'V'},
+  {n:8,  text:'Dalam percakapan saya sering berkata "saya dengar", "terdengar bagus"', dim:'A'},
+  {n:9,  text:'Ruangan, meja, tas, atau kamar saya biasanya berantakan/tidak beraturan', dim:'K'},
+  {n:10, text:'Saya suka merancang, mengerjakan, dan membuat sesuatu dengan baik', dim:'K'},
+  {n:11, text:'Saya hafal hampir semua lirik lagu yang pernah saya dengar', dim:'A'},
+  {n:12, text:'Saat mendengar orang bicara, saya membayangkan apa yang dikatakannya', dim:'V'},
+  {n:13, text:'Saya suka berolahraga dan merasa menjadi olahragawan yang baik', dim:'K'},
+  {n:14, text:'Mudah bagi saya mengobrol lama dengan teman, meski lewat telepon', dim:'A'},
+  {n:15, text:'Tanpa musik, hidup terasa sangat membosankan', dim:'A'},
+  {n:16, text:'Saya suka berkumpul dan mudah mengobrol dengan siapa saja', dim:'A'},
+  {n:17, text:'Saat melihat gambar, saya mudah mengenalinya walau posisinya berubah', dim:'V'},
+  {n:18, text:'Saya biasa berkata "saya rasa", "saya perlu pijakan atas hal ini"', dim:'K'},
+  {n:19, text:'Saat mengingat pengalaman, saya sering membayangkannya dalam pikiran', dim:'V'},
+  {n:20, text:'Saat mengingat pengalaman, saya sering mendengar suara/berbicara sendiri', dim:'A'},
+  {n:21, text:'Saat mengingat pengalaman, saya sering mengingat perasaan saat itu', dim:'K'},
+  {n:22, text:'Saya lebih menyukai seni musik daripada seni lukis', dim:'A'},
+  {n:23, text:'Saya sering mencoret-coret kertas saat menelepon atau rapat', dim:'V'},
+  {n:24, text:'Saya lebih suka memperagakan daripada membuat laporan tertulis', dim:'K'},
+  {n:25, text:'Saya lebih suka membacakan cerita daripada mendengarkannya', dim:'V'},
+  {n:26, text:'Biasanya saya berbicara dengan perlahan', dim:'K'},
+  {n:27, text:'Saya lebih suka berbicara daripada menulis', dim:'A'},
+  {n:28, text:'Tulisan tangan saya biasanya tidak rapi', dim:'K'},
+  {n:29, text:'Saya biasa menggunakan jari untuk menunjuk kalimat yang sedang dibaca', dim:'K'},
+  {n:30, text:'Saya dapat cepat menjumlah dan mengalikan angka dalam kepala', dim:'V'},
+  {n:31, text:'Saya suka mengeja dan pandai mengeja kata-kata', dim:'V'},
+  {n:32, text:'Saya sangat terganggu bila ada yang bicara saat saya menonton TV', dim:'A'},
+  {n:33, text:'Saya suka mencatat perintah/instruksi yang disampaikan kepada saya', dim:'V'},
+  {n:34, text:'Saya mudah mengingat apa yang dikatakan orang lain', dim:'A'},
+  {n:35, text:'Saya paling mudah belajar dengan mempraktekkannya langsung', dim:'K'},
+  {n:36, text:'Sangat sulit bagi saya untuk duduk diam dalam waktu lama', dim:'K'},
+];
+// Kunci VAK ini HARUS identik dengan Tes_Gaya_Belajar_BiroMindset.pdf (lembar kertas resmi).
+const GB_DIM_NAMES = {V:'Visual', A:'Auditori', K:'Kinestetik'};
+const GB_DIM_MAX = {V:12, A:12, K:12};
+
+let gbAnswers = {};
+
+function gbRenderForm(){
+  const cont = document.getElementById('gb-items');
+  if (!cont) return;
+  cont.innerHTML = GB_ITEMS.map((it,idx)=>{
+    const yaSel = gbAnswers[idx]==='Ya' ? ' sel':'';
+    const tdkSel = gbAnswers[idx]==='Tidak' ? ' sel':'';
+    return `<div class="lk-item${gbAnswers[idx]?'':' unanswered'}" id="gb-row-${idx}">
+      <span class="lk-no">${it.n}</span>
+      <span class="lk-text">${it.text}</span>
+      <span class="lk-opts">
+        <button type="button" class="lk-btn${yaSel}" onclick="gbPilih(${idx},'Ya')">Ya</button>
+        <button type="button" class="lk-btn${tdkSel}" onclick="gbPilih(${idx},'Tidak')">Tidak</button>
+      </span>
+    </div>`;
+  }).join('');
+  gbUpdateProgress();
+}
+
+function gbPilih(idx,val){
+  gbAnswers[idx]=val;
+  const row = document.getElementById('gb-row-'+idx);
+  if (row) {
+    row.classList.remove('unanswered');
+    const btns = row.querySelectorAll('.lk-btn');
+    btns[0].classList.toggle('sel', val==='Ya');
+    btns[1].classList.toggle('sel', val==='Tidak');
+  }
+  gbUpdateProgress();
+  gbHitung();
+}
+
+function gbUpdateProgress(){
+  const n = Object.keys(gbAnswers).length;
+  const el = document.getElementById('gb-progress');
+  if (el) el.textContent = n+' / 36 terisi';
+}
+
+function gbHitung(){
+  const skor = {V:0,A:0,K:0};
+  const jawabanList = [];
+  GB_ITEMS.forEach((it,idx)=>{
+    const val = gbAnswers[idx] || '';
+    if (val==='Ya') skor[it.dim]++;
+    jawabanList.push(val);
+  });
+  const maxSkor = Math.max(skor.V,skor.A,skor.K);
+  const dominan = Object.keys(skor).filter(d=>skor[d]===maxSkor && maxSkor>0).map(d=>GB_DIM_NAMES[d]);
+  const dominanText = dominan.length ? dominan.join(' & ') : '—';
+  gbRenderSummary(skor,dominanText);
+  return {skor,dominanText,jawabanList};
+}
+
+function gbRenderSummary(skor,dominanText){
+  const cont = document.getElementById('gb-summary');
+  if (cont) {
+    cont.innerHTML = Object.keys(skor).map(d=>{
+      const pct = Math.round(skor[d]/GB_DIM_MAX[d]*100);
+      return `<div class="sum-card">
+        <div class="sum-lbl">${GB_DIM_NAMES[d]}</div>
+        <div class="sum-val">${skor[d]}<span style="font-size:11px;color:var(--ink-s)">/${GB_DIM_MAX[d]}</span></div>
+        <div class="sum-sub">${pct}%</div>
+      </div>`;
+    }).join('');
+  }
+  const domEl = document.getElementById('gb-dominan');
+  if (domEl) domEl.textContent = dominanText;
+}
+
+function konfirmasiBersihkanGB(btn){
+  if (btn.dataset.confirm==='1') {
+    gbAnswers = {};
+    gbRenderForm();
+    gbHitung();
+    btn.textContent = '↺ Bersihkan Jawaban Gaya Belajar';
+    btn.dataset.confirm = '0';
+  } else {
+    btn.textContent = '⚠ Klik sekali lagi untuk konfirmasi';
+    btn.dataset.confirm = '1';
+    setTimeout(()=>{ if (btn.dataset.confirm==='1'){ btn.textContent='↺ Bersihkan Jawaban Gaya Belajar'; btn.dataset.confirm='0'; } },3000);
+  }
+}
+
+function gbIdentitas(){ return bfIdentitas(); }
+
+const GB_SARAN = {
+  V: 'Gunakan catatan, diagram, warna, dan materi visual (mind map, kartu bergambar) saat belajar. Duduk di depan kelas agar mudah melihat papan tulis/media visual.',
+  A: 'Belajar lebih efektif dengan mendengarkan penjelasan, diskusi, atau membaca dengan suara keras. Rekaman audio dan diskusi kelompok sangat membantu.',
+  K: 'Belajar paling efektif lewat praktik langsung, gerakan, dan pengalaman nyata (eksperimen, permainan peran, alat peraga). Sesi belajar sebaiknya diselingi jeda gerak.',
+};
+
+function gbBuildLaporan(){
+  const {skor,dominanText} = gbHitung();
+  const id = gbIdentitas();
+
+  document.getElementById('gbl-nama').textContent = id.nama || '—';
+  document.getElementById('gbl-sekolah').textContent = (id.sekolah||'—') + (id.kelas ? ' / '+id.kelas : '');
+  document.getElementById('gbl-lahir').textContent = bfFmtTgl(id.tgl_lahir);
+  document.getElementById('gbl-tgltes').textContent = bfFmtTgl(id.tgl_tes);
+  document.getElementById('gbl-psikolog').textContent = getPsikolog();
+  document.getElementById('gbl-tahun').textContent = APP_SETTING.tahun || new Date().getFullYear();
+
+  const colors = {V:'#B5698A',A:'#7B9EC0',K:'#85B89A'};
+  document.getElementById('gbl-tbody').innerHTML = Object.keys(skor).map(d=>{
+    const pct = Math.round(skor[d]/GB_DIM_MAX[d]*100);
+    return `<tr>
+      <td style="font-weight:500;color:var(--ink)">${GB_DIM_NAMES[d]}</td>
+      <td class="l-ss">${skor[d]}<span style="font-size:8px;color:var(--ink-s)">/${GB_DIM_MAX[d]}</span></td>
+      <td><div class="l-bar-t"><div class="l-bar-f" style="width:${pct}%;background:${colors[d]}"></div></div></td>
+      <td style="text-align:center;font-weight:500">${pct}%</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('gbl-dominan-title').textContent = 'Gaya Belajar Dominan: '+dominanText;
+  document.getElementById('gbl-narasi').innerHTML = `${id.nama||'Peserta'} menunjukkan kecenderungan gaya belajar <strong>${dominanText}</strong> berdasarkan skor tertinggi pada profil VAK di atas. Kecenderungan ini menunjukkan cara paling efektif bagi ${id.nama||'peserta'} dalam menyerap dan mengolah informasi baru.`;
+
+  const dimKeys = dominanText.split(' & ').map(nm => Object.keys(GB_DIM_NAMES).find(k=>GB_DIM_NAMES[k]===nm)).filter(Boolean);
+  document.getElementById('gbl-saran').textContent = dimKeys.map(k=>GB_SARAN[k]).join(' ');
+}
+
+function gbPrintLaporan(){
+  gbBuildLaporan();
+  document.body.classList.add('print-gayabelajar');
+  const s=document.createElement('style'); s.id='page-orientation-gb';
+  s.textContent='@page{ size:A4 portrait; margin:0; }';
+  document.head.appendChild(s);
+  setTimeout(()=>{
+    window.print();
+    showPrintFallbackBanner();
+    setTimeout(()=>{ document.body.classList.remove('print-gayabelajar'); document.getElementById('page-orientation-gb')?.remove(); },1500);
+  },250);
+}
+
+function gbOpenSaveModal(){ document.getElementById('gb-modal-overlay').style.display='flex'; }
+function gbCloseSaveModal(){ document.getElementById('gb-modal-overlay').style.display='none'; }
+
+async function gbSaveToSheets(){
+  const {skor,dominanText,jawabanList} = gbHitung();
+  const id = gbIdentitas();
+  const statusEl = document.getElementById('gb-modal-status');
+  const btn = document.getElementById('btn-gb-save');
+  const headers = ['timestamp','tes','nama','sekolah','kelas','tgl_lahir','tgl_tes','jenis_kelamin','psikolog','asessor','jenis_pengisian','skor_visual','skor_auditori','skor_kinestetik','gaya_dominan','catatan'];
+  for (let i=1;i<=36;i++) headers.push('jawaban_'+i);
+  const values = [
+    new Date().toISOString(), 'GAYABELAJAR', id.nama, id.sekolah||'', id.kelas||'', id.tgl_lahir||'', id.tgl_tes||'', id.jk||'',
+    getPsikolog(), getAsessorAktif(), 'Manual',
+    skor.V, skor.A, skor.K, dominanText, 'Diisi manual dari lembar jawaban kertas',
+    ...jawabanList
+  ];
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  try {
+    const resp = await fetch(SHEETS_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ tes:'GAYABELAJAR', sheet_name:'HASIL_GAYABELAJAR', headers, values }),
+    });
+    const result = await resp.json();
+    statusEl.style.display='block';
+    if (result.status==='ok') {
+      statusEl.style.background='#EAF5EE'; statusEl.style.color='#2E7D4F';
+      statusEl.textContent = '✅ Tersimpan ke Google Sheets.';
+    } else throw new Error(result.message||'gagal');
+  } catch(err) {
+    statusEl.style.display='block';
+    statusEl.style.background='#FAEAEA'; statusEl.style.color='#904040';
+    statusEl.textContent = '❌ Gagal menyimpan: '+err.message;
+  } finally {
+    btn.disabled=false; btn.textContent='💾 Simpan Sekarang';
+  }
+}
+
+// Render awal begitu dokumen selesai dimuat
+document.addEventListener('DOMContentLoaded', function(){
+  bfRenderForm();
+  bfHitung();
+  gbRenderForm();
+  gbHitung();
+});
 
 </script>
 </body>

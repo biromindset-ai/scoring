@@ -423,8 +423,6 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
             <option>TK A</option><option>TK B</option>
             <option>Klas 1</option><option>Klas 2</option><option>Klas 3</option>
             <option>Klas 4</option><option>Klas 5</option><option>Klas 6</option>
-            <option>Klas 7A</option><option>Klas 7B</option><option>Klas 7C</option>
-            <option>Klas 7D</option><option>Klas 7E</option>
           </select>
         </div>
         <div class="f">
@@ -1848,10 +1846,10 @@ const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyFolbE4ziguFglG--TV
 let APP_SETTING = {
   nama_biro:    'Biro Mindset',
   tagline:      'Layanan Psikologi Sekolah',
-  psikolog:     'Dini Santiko Budi S.Psi, psikolog',
+  psikolog:     'Dini Santiko Budi Sp.Psi, psikolog',
   sipp:         '2/0340/05/SRIPP/03',
   asessor_aktif:'Tasya',
-  asessor_list: ['Tasya','Vivi','Sherly','Dini','Susi','Andri'],
+  asessor_list: ['Tasya','Vivi','Sherly','Susi','Dini','Andri'],
   sekolah:      ['Daarusshofa','Darul Quran','Darul Habib','Cordova'],
   kelas:        ['TK A','TK B','Klas 1','Klas 2','Klas 3','Klas 4','Klas 5','Klas 6','Klas 7A','Klas 7B','Klas 7C','Klas 7D','Klas 7E'],
   footer_text:  'Dokumen rahasia — untuk keperluan bimbingan psikologis sekolah',
@@ -4350,7 +4348,11 @@ function bfPrintLaporan(){
   },250);
 }
 
-function bfOpenSaveModal(){ document.getElementById('bf-modal-overlay').style.display='flex'; }
+function bfOpenSaveModal(){
+  showPanel('p-bigfive-lap', document.querySelectorAll('.tab')[5]);
+  bfBuildLaporan();
+  document.getElementById('bf-modal-overlay').style.display='flex';
+}
 function bfCloseSaveModal(){ document.getElementById('bf-modal-overlay').style.display='none'; }
 
 async function bfSaveToSheets(){
@@ -4579,7 +4581,11 @@ function gbPrintLaporan(){
   },250);
 }
 
-function gbOpenSaveModal(){ document.getElementById('gb-modal-overlay').style.display='flex'; }
+function gbOpenSaveModal(){
+  showPanel('p-gayabelajar-lap', document.querySelectorAll('.tab')[6]);
+  gbBuildLaporan();
+  document.getElementById('gb-modal-overlay').style.display='flex';
+}
 function gbCloseSaveModal(){ document.getElementById('gb-modal-overlay').style.display='none'; }
 
 async function gbSaveToSheets(){

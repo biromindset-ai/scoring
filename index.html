@@ -2541,6 +2541,40 @@ function showModalStatus(msg, ok) {
   st.style.border = '1px solid ' + (ok ? '#B4DCC4' : '#F5C2C0');
 }
 
+// ── Kumpulkan jawaban mentah per-butir dari semua 10 subtes TKD ──
+// (dipakai untuk disimpan sebagai file JSON terpisah di Drive, lihat code.gs simpanJawabanMentahTKD)
+function tkdKumpulkanJawabanMentah(){
+  const jawaban = {};
+  jawaban.tkd1 = [];
+  for (let i=0;i<10;i++) jawaban.tkd1.push(document.getElementById('t1-'+i)?.value || '');
+
+  const mcCounts = { mc2:40, mc3:40, mc4:20, mc7:20, mc8:20, mc9:20 };
+  Object.keys(mcCounts).forEach(id=>{
+    const arr = [];
+    for (let i=0;i<mcCounts[id];i++) arr.push(document.getElementById(id+'-'+i)?.value || '');
+    jawaban[id] = arr;
+  });
+
+  const mc5 = [];
+  for (let i=0;i<20;i++) mc5.push(document.getElementById('mc5-'+i)?.value || '');
+  jawaban.mc5 = mc5;
+
+  const dr6 = [];
+  for (let i=0;i<30;i++) dr6.push([document.getElementById('dr6-'+i+'-a')?.value||'', document.getElementById('dr6-'+i+'-b')?.value||'']);
+  jawaban.dr6 = dr6;
+
+  const mc10 = [];
+  for (let i=0;i<80;i++) mc10.push(document.getElementById('mc10-'+i)?.value || '');
+  jawaban.mc10 = mc10;
+
+  return jawaban;
+}
+
+// Cek apakah ada minimal satu jawaban terisi (supaya tidak kirim payload jawaban_mentah kosong melulu '')
+function tkdJawabanMentahAdaIsinya(j){
+  return Object.values(j).some(arr => arr.some(v => Array.isArray(v) ? v.some(x=>x!=='') : v!==''));
+}
+
 async function saveToSheets() {
   // ── Identitas dari panel ① (field yang benar) ──────────────
   const nama    = document.getElementById('nama')?.value    || '—';
@@ -2571,7 +2605,7 @@ async function saveToSheets() {
   // ── Standard headers & values ──────────────────────────────
   const headers = [
     'timestamp','tes','nama','sekolah','kelas','tgl_lahir','tgl_tes','jenis_kelamin',
-    'psikolog','asessor',
+    'psikolog','asessor','jenis_pengisian',
     'raw_tkd1','raw_tkd2','raw_tkd3','raw_tkd4','raw_tkd5',
     'raw_tkd6','raw_tkd7','raw_tkd8','raw_tkd9','raw_tkd10',
     'ss_tkd1','ss_tkd2','ss_tkd3','ss_tkd4','ss_tkd5',
@@ -2586,13 +2620,17 @@ async function saveToSheets() {
   const values = [
     timestampVal, 'TKD',
     nama, sekolah, kelas, tglLahir, tglTes, jk,
-    psikolog, asessor,
+    psikolog, asessor, 'Manual',
     raws[1],raws[2],raws[3],raws[4],raws[5],
     raws[6],raws[7],raws[8],raws[9],raws[10],
     ss[1],ss[2],ss[3],ss[4],ss[5],
     ss[6],ss[7],ss[8],ss[9],ss[10],
     komposit, status, catatan
   ];
+
+  // Jawaban mentah per-butir (kalau edit mode dan kotak item memang dipudarkan/kosong, ini otomatis tidak terkirim)
+  const jawabanMentah = tkdKumpulkanJawabanMentah();
+  const adaJawabanMentah = tkdJawabanMentahAdaIsinya(jawabanMentah);
 
   // UI feedback
   const btn = document.getElementById('btn-save-now');
@@ -2602,6 +2640,7 @@ async function saveToSheets() {
   try {
     const payload = { tes: 'TKD', headers, values };
     if (isEdit) { payload.mode = 'update'; payload.row_key = _cetEditKey; }
+    if (adaJawabanMentah) { payload.jawaban_mentah = jawabanMentah; }
 
     const resp = await fetch(SHEETS_URL, {
       method: 'POST',

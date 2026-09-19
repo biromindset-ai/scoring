@@ -375,6 +375,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
     <div class="hdr-title">Biro Mindset</div>
     <div class="hdr-sub">Asesmen Psikologi Sekolah</div>
   </div>
+  <div id="gas-version-badge" style="font-family:'DM Mono',monospace;font-size:8.5px;color:var(--ink-s);border:1px solid var(--rule);border-radius:5px;padding:3px 8px;margin-left:8px;white-space:nowrap" title="Versi backend Google Apps Script yang sedang aktif">GAS: —</div>
   <nav class="tabs">
     <button class="tab on" onclick="showPanel('p-id',this)">① Identitas</button>
     <button class="tab" onclick="showPanel('p-tkd',this)">② TKD Scoring</button>
@@ -3311,6 +3312,18 @@ async function settingsInit() {
   try {
     const resp = await fetch(SHEETS_URL);
     const data = await resp.json();
+    const badge = document.getElementById('gas-version-badge');
+    if (badge) {
+      if (data.gas_version) {
+        badge.textContent = 'GAS: ' + data.gas_version;
+        badge.style.color = 'var(--mauve-d)';
+        badge.style.borderColor = 'var(--mauve-l)';
+      } else {
+        badge.textContent = 'GAS: versi lama (belum ada gas_version)';
+        badge.style.color = '#904040';
+        badge.style.borderColor = '#F5C2C0';
+      }
+    }
     if (data.status === 'ok' && data.setting) {
       APP_SETTING = { ...APP_SETTING, ...data.setting };
       localStorage.setItem('mindset_app_setting', JSON.stringify(APP_SETTING));
@@ -3321,6 +3334,8 @@ async function settingsInit() {
   } catch(e) {
     const info = document.getElementById('set-conn-info');
     if (info) info.textContent = 'Mode offline — menggunakan setting bawaan.';
+    const badge = document.getElementById('gas-version-badge');
+    if (badge) { badge.textContent = 'GAS: offline'; badge.style.color = '#904040'; badge.style.borderColor = '#F5C2C0'; }
   }
 }
 

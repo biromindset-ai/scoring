@@ -1161,7 +1161,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
       <span class="badge" id="bf-progress">0 / 44 terisi</span>
     </div>
     <div class="card-body">
-      <div style="font-size:10.5px;color:var(--ink-s);margin-bottom:10px">Skala: <strong>STS</strong> Sangat Tidak Sesuai · <strong>TS</strong> Tidak Sesuai · <strong>N</strong> Netral · <strong>S</strong> Sesuai · <strong>SS</strong> Sangat Sesuai</div>
+      <div style="font-size:10.5px;color:var(--ink-s);margin-bottom:10px">Skala: <strong>SS</strong> Sangat Sesuai · <strong>S</strong> Sesuai · <strong>N</strong> Netral · <strong>TS</strong> Tidak Sesuai · <strong>STS</strong> Sangat Tidak Sesuai</div>
       <div class="lk-list" id="bf-items"></div>
     </div>
   </div>
@@ -4249,11 +4249,11 @@ const BF_ITEMS = [
 ];
 // Skala & kunci trait ini HARUS identik dengan BigFIve.html (versi online) agar hasil manual & online konsisten.
 const BF_OPTIONS = [
-  {label:'STS', full:'Sangat Tidak Sesuai', pos:1},
-  {label:'TS',  full:'Tidak Sesuai',        pos:2},
-  {label:'N',   full:'Netral',              pos:3},
-  {label:'S',   full:'Sesuai',              pos:4},
   {label:'SS',  full:'Sangat Sesuai',       pos:5},
+  {label:'S',   full:'Sesuai',              pos:4},
+  {label:'N',   full:'Netral',              pos:3},
+  {label:'TS',  full:'Tidak Sesuai',        pos:2},
+  {label:'STS', full:'Sangat Tidak Sesuai', pos:1},
 ];
 const BF_TRAIT_NAMES = {E:'Ekstraversion', A:'Agreeableness', C:'Conscientiousness', N:'Neuroticism', O:'Openness'};
 const BF_TRAIT_MAX   = {E:40, A:45, C:45, N:40, O:50};

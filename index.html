@@ -119,7 +119,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 
 /* LAPORAN PAGE */
 @media print{
-  .hdr,.btn-bar,.tab-bar,.wrap>*{display:none!important}
+  .hdr,.btn-bar,.tab-bar,.wrap>*,#papan-float{display:none!important}
   body{background:white}
   .lap-wrap{box-shadow:none!important;margin:0!important}
   /* TKD print (Cetak Laporan) */
@@ -4851,14 +4851,145 @@ function gbTampilkanDariData(record){
   showPanel('p-gayabelajar-lap', document.querySelectorAll('.tab')[6]);
 }
 
+// ══════════════════════════════════════════════════════════
+// ── PAPAN BERSAMA: chat sederhana, semua bisa baca & tulis ──
+// Baca via GViz (cetFetchSheet, sudah ada), tulis via doPost yang sudah
+// generik di code.gs (sheet "PAPAN_CHAT" dibuat otomatis saat pesan pertama
+// dikirim — tidak perlu ubah/deploy ulang Apps Script).
+// ══════════════════════════════════════════════════════════
+let papanInterval = null;
+
+function papanEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function papanFormatWaktu(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return String(ts);
+  const pad = n => String(n).padStart(2,'0');
+  return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+
+function papanRenderList(rows) {
+  const el = document.getElementById('papan-list');
+  if (!el) return;
+  if (!rows.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--ink-s)">Belum ada pesan. Jadilah yang pertama menulis!</div>';
+    return;
+  }
+  const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 30;
+  el.innerHTML = rows.map(r => `
+    <div style="background:white;border:1px solid var(--rule);border-radius:8px;padding:7px 10px">
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:2px">
+        <span style="font-size:11px;font-weight:600;color:var(--mauve-d)">${papanEsc(r.nama || 'Anonim')}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:8.5px;color:var(--ink-s);white-space:nowrap">${papanFormatWaktu(r.timestamp)}</span>
+      </div>
+      <div style="font-size:12px;color:var(--ink);white-space:pre-wrap;word-break:break-word">${papanEsc(r.pesan)}</div>
+    </div>
+  `).join('');
+  if (nearBottom) el.scrollTop = el.scrollHeight;
+}
+
+async function papanMuat(silent) {
+  const el = document.getElementById('papan-list');
+  const badge = document.getElementById('papan-float-badge');
+  if (!silent && el && !el.children.length) el.innerHTML = '<div style="font-size:11px;color:var(--ink-s)">⏳ Memuat papan...</div>';
+  try {
+    const rows = await cetFetchSheet('PAPAN_CHAT');
+    papanRenderList(rows);
+    if (badge) badge.textContent = 'LIVE';
+  } catch(err) {
+    // Sheet "PAPAN_CHAT" belum ada — akan dibuat otomatis saat pesan pertama dikirim
+    if (el) el.innerHTML = '<div style="font-size:11px;color:var(--ink-s)">Papan masih kosong — kirim pesan pertama untuk memulai.</div>';
+    if (badge) badge.textContent = 'BARU';
+  }
+}
+
+async function papanKirim() {
+  const namaInp  = document.getElementById('papan-nama');
+  const pesanInp = document.getElementById('papan-pesan');
+  const btn      = document.getElementById('papan-btn-kirim');
+  const nama  = (namaInp.value || '').trim() || 'Anonim';
+  const pesan = (pesanInp.value || '').trim();
+  if (!pesan) { pesanInp.focus(); return; }
+  namaInp.value = nama;
+  localStorage.setItem('papan_nama', nama);
+  btn.disabled = true; pesanInp.disabled = true;
+  const teksLama = btn.textContent; btn.textContent = '...';
+  try {
+    const resp = await fetch(SHEETS_URL, {
+      method: 'POST', headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify({
+        tes: 'PAPAN', sheet_name: 'PAPAN_CHAT',
+        headers: ['timestamp','nama','pesan'],
+        values: [new Date().toISOString(), nama, pesan],
+      }),
+    });
+    const raw = await resp.text();
+    let result; try { result = JSON.parse(raw); } catch(e) { result = null; }
+    if (result && result.status !== 'ok') throw new Error(result.message || 'gagal menyimpan');
+    pesanInp.value = '';
+    await papanMuat(true);
+  } catch(err) {
+    alert('❌ Gagal mengirim pesan: ' + err.message);
+  } finally {
+    btn.disabled = false; pesanInp.disabled = false; btn.textContent = teksLama;
+    pesanInp.focus();
+  }
+}
+
+// Minimize/besarkan widget — status disimpan supaya tidak menutupi layar terus-menerus
+// tapi tetap otomatis terbuka setiap kali situs ini pertama dibuka (session baru).
+function papanToggleFloat(forceCollapsed) {
+  const body  = document.getElementById('papan-float-body');
+  const caret = document.getElementById('papan-float-caret');
+  const collapsed = forceCollapsed !== undefined ? forceCollapsed : body.style.display !== 'none';
+  body.style.display = collapsed ? 'none' : '';
+  if (caret) caret.textContent = collapsed ? '▸' : '▾';
+  sessionStorage.setItem('papan_collapsed', collapsed ? '1' : '0');
+}
+
+function papanStartAuto() {
+  const savedNama = localStorage.getItem('papan_nama');
+  const namaInp = document.getElementById('papan-nama');
+  if (savedNama && namaInp && !namaInp.value) namaInp.value = savedNama;
+  // Otomatis muncul terbuka setiap sesi baru; kalau user pernah meminimalkan
+  // di sesi ini (belum tutup tab), pertahankan preferensi itu.
+  papanToggleFloat(sessionStorage.getItem('papan_collapsed') === '1');
+  papanMuat();
+  if (papanInterval) clearInterval(papanInterval);
+  papanInterval = setInterval(() => papanMuat(true), 6000);
+}
+
 // Render awal begitu dokumen selesai dimuat
 document.addEventListener('DOMContentLoaded', function(){
   bfRenderForm();
   bfHitung();
   gbRenderForm();
   gbHitung();
+  papanStartAuto();
 });
 
 </script>
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- ══ WIDGET MENGAMBANG: PAPAN BERSAMA (muncul otomatis di semua tab) ══ -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="papan-float" style="position:fixed;right:16px;bottom:16px;z-index:9999;width:310px;max-width:calc(100vw - 24px);font-family:'DM Sans',sans-serif;box-shadow:0 12px 34px rgba(28,26,30,.22);border-radius:12px;overflow:hidden;background:var(--cream);border:1px solid var(--rule)">
+  <div style="background:var(--mauve-d);color:#fff;padding:10px 12px 10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none" onclick="papanToggleFloat()">
+    <span style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;flex:1">💬 Papan Bersama</span>
+    <span id="papan-float-badge" style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.08em;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:8px;white-space:nowrap">LIVE</span>
+    <button id="papan-float-caret" style="background:transparent;border:none;color:#fff;font-size:14px;cursor:pointer;padding:0 2px;line-height:1" onclick="event.stopPropagation();papanToggleFloat()">▾</button>
+  </div>
+  <div id="papan-float-body">
+    <div id="papan-list" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding:10px 12px"></div>
+    <div style="display:flex;gap:6px;padding:0 10px 10px;flex-wrap:wrap;border-top:1px solid var(--rule);padding-top:8px;margin:0 10px 10px">
+      <input class="fi" id="papan-nama" placeholder="Nama" style="width:82px;font-size:11px;padding:6px 8px">
+      <input class="fi" id="papan-pesan" placeholder="Tulis pesan…" style="flex:1;min-width:100px;font-size:12px;padding:6px 8px" onkeydown="if(event.key==='Enter'){event.preventDefault();papanKirim();}">
+      <button class="btn-p" id="papan-btn-kirim" style="padding:6px 14px;font-size:12px" onclick="papanKirim()">Kirim</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -704,7 +704,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
       </details>
       <div id="modal-status" style="display:none;font-size:11px;padding:8px 12px;border-radius:6px;margin-bottom:14px"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button onclick="closeSaveModal()" style="padding:8px 18px;background:transparent;color:#7D3F5C;border:1.5px solid #D4A0B8;border-radius:7px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif">Batal</button>
+        <button onclick="closeSaveModal()" id="modal-cancel" style="padding:8px 18px;background:transparent;color:#7D3F5C;border:1.5px solid #D4A0B8;border-radius:7px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif">Batal</button>
         <button onclick="saveToSheets()" id="btn-save-now" style="padding:8px 22px;background:#B5698A;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif">💾 Simpan Sekarang</button>
       </div>
     </div>
@@ -2521,6 +2521,8 @@ function openSaveModal() {
     : 'Data peserta, semua skor mentah, SS, dan komposit akan dikirim ke spreadsheet Anda.';
 
   const overlay = document.getElementById('modal-overlay');
+  const cancelBtn = document.getElementById('modal-cancel');
+  if (cancelBtn) cancelBtn.textContent = 'Batal';
   overlay.style.display = 'flex';
 }
 
@@ -2651,12 +2653,14 @@ async function saveToSheets() {
     const result = await resp.json();
     if (result.status === 'ok') {
       showModalStatus(isEdit ? '✅ Data berhasil di-update di Google Sheets!' : '✅ Data berhasil disimpan ke Google Sheets!', true);
-      btn.textContent = '✅ Tersimpan';
-      setTimeout(() => {
-        btn.textContent = '💾 Simpan Sekarang';
-        btn.disabled = false;
-        if (isEdit) { closeSaveModal(); cetBatalEdit(); showFormToast('✅ Data TKD berhasil diperbarui.'); }
-      }, 2500);
+      btn.textContent = '💾 Simpan Sekarang';
+      btn.disabled = false;
+      if (isEdit) {
+        setTimeout(() => { closeSaveModal(); cetBatalEdit(); showFormToast('✅ Data TKD berhasil diperbarui.'); }, 1500);
+      } else {
+        const cancelBtn = document.getElementById('modal-cancel');
+        if (cancelBtn) cancelBtn.textContent = '✓ Tutup';
+      }
     } else {
       throw new Error('Response tidak OK');
     }

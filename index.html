@@ -3694,7 +3694,7 @@ function normalisasiTanggalISO(raw) {
 
 // ── Ambil satu sheet via GViz ──────────────────────────────────
 async function cetFetchSheet(tab) {
-  const url = `https://docs.google.com/spreadsheets/d/${CET_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tab)}`;
+  const url = `https://docs.google.com/spreadsheets/d/${CET_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tab)}&headers=1`;
   const resp = await fetch(url);
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const text = await resp.text();
@@ -4898,11 +4898,16 @@ async function papanMuat(silent) {
   try {
     const rows = await cetFetchSheet('PAPAN_CHAT');
     papanRenderList(rows);
-    if (badge) badge.textContent = 'LIVE';
+    if (badge) { badge.textContent = 'LIVE'; badge.style.background = ''; }
   } catch(err) {
-    // Sheet "PAPAN_CHAT" belum ada — akan dibuat otomatis saat pesan pertama dikirim
-    if (el) el.innerHTML = '<div style="font-size:11px;color:var(--ink-s)">Papan masih kosong — kirim pesan pertama untuk memulai.</div>';
-    if (badge) badge.textContent = 'BARU';
+    console.error('Papan: gagal memuat PAPAN_CHAT —', err);
+    // Kalau sheet memang belum pernah ada, error GViz-nya berisi kata "not found" / "tidak ditemukan".
+    // Kalau bukan itu (mis. jaringan/izin akses spreadsheet), tampilkan pesan errornya biar gampang didiagnosis.
+    const belumAda = /not found|tidak ditemukan|invalid/i.test(err.message || '');
+    if (el) el.innerHTML = belumAda
+      ? '<div style="font-size:11px;color:var(--ink-s)">Papan masih kosong — kirim pesan pertama untuk memulai.</div>'
+      : `<div style="font-size:11px;color:#904040">⚠️ Gagal memuat papan: ${papanEsc(err.message||'')}</div>`;
+    if (badge) { badge.textContent = belumAda ? 'BARU' : 'ERROR'; badge.style.background = belumAda ? '' : '#F5C2C0'; }
   }
 }
 

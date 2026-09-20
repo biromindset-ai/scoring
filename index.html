@@ -1114,6 +1114,14 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 <!-- ══════════════════════════════════════════════════════════ -->
 <div id="p-bigfive" class="panel">
 
+  <div id="bf-edit-banner" class="edit-mode-banner" style="display:none">
+    <span style="font-size:20px">✏️</span>
+    <span style="font-size:11.5px;color:var(--ink-m);flex:1">
+      <b>Mode Edit Data Big Five</b> — jawaban di bawah sudah diisi dari data tersimpan. Ubah seperlunya, lalu klik <b>💾 Simpan ke Google Sheets</b> untuk MENIMPA baris asli (bukan menambah baris baru).
+    </span>
+    <button class="btn-o" onclick="bfBatalEdit()" style="white-space:nowrap;border-color:#F5C2C0;color:#904040">✕ Batal Edit</button>
+  </div>
+
   <div class="card">
     <div class="card-hd"><span class="card-title">🔍 Buka Data yang Sudah Tersimpan</span></div>
     <div class="card-body">
@@ -1269,6 +1277,14 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
 <!-- ══ PANEL 8: GAYA BELAJAR SCORING (MANUAL) ══ -->
 <!-- ══════════════════════════════════════════════════════════ -->
 <div id="p-gayabelajar" class="panel">
+
+  <div id="gb-edit-banner" class="edit-mode-banner" style="display:none">
+    <span style="font-size:20px">✏️</span>
+    <span style="font-size:11.5px;color:var(--ink-m);flex:1">
+      <b>Mode Edit Data Gaya Belajar</b> — jawaban di bawah sudah diisi dari data tersimpan. Ubah seperlunya, lalu klik <b>💾 Simpan ke Google Sheets</b> untuk MENIMPA baris asli (bukan menambah baris baru).
+    </span>
+    <button class="btn-o" onclick="gbBatalEdit()" style="white-space:nowrap;border-color:#F5C2C0;color:#904040">✕ Batal Edit</button>
+  </div>
 
   <div class="card">
     <div class="card-hd"><span class="card-title">🔍 Buka Data yang Sudah Tersimpan</span></div>
@@ -1811,7 +1827,7 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
     <div class="card" style="margin-bottom:14px">
       <div class="card-hd">
         <span class="card-title">Cetak Laporan dari Google Sheets</span>
-        <span class="badge">HASIL_TKD &amp; HASIL_NST</span>
+        <span class="badge">TKD, NST, Big Five &amp; Gaya Belajar</span>
       </div>
       <div class="card-body">
 
@@ -1852,6 +1868,9 @@ input.tot-val:not([readonly]){background:#FFF9C4;border:1.5px solid var(--mauve)
           <div><div class="lbl" style="margin-bottom:3px">Tanggal Tes</div><div style="font-size:12px;font-weight:600;color:var(--ink)" id="cet-info-tgl">—</div></div>
           <div><div class="lbl" style="margin-bottom:3px">Status / Hasil</div><div style="font-size:12px;font-weight:600;color:var(--ink)" id="cet-info-status">—</div></div>
         </div>
+
+        <!-- Instrumen lain (Big Five / Gaya Belajar) untuk peserta yang sama -->
+        <div id="cet-lain-row" style="display:none;margin-top:10px"></div>
       </div>
     </div>
 
@@ -3721,12 +3740,14 @@ async function cetFetchSheet(tab) {
 async function cetMuatData() {
   const btn = document.getElementById('btn-cet-muat');
   if (btn) { btn.textContent = '⏳ Memuat...'; btn.disabled = true; }
-  cetShowStatus('⏳ Mengambil data TKD & NST dari Google Sheets...', 'loading');
+  cetShowStatus('⏳ Mengambil data TKD, NST, Big Five & Gaya Belajar dari Google Sheets...', 'loading');
 
   try {
-    const [tkd, nst] = await Promise.all([
+    const [tkd, nst, bf, gb] = await Promise.all([
       cetFetchSheet('HASIL_TKD').catch(() => []),
       cetFetchSheet('HASIL_NST').catch(() => []),
+      cetFetchSheet('HASIL_BIGFIVE').catch(() => []),
+      cetFetchSheet('HASIL_GAYABELAJAR').catch(() => []),
     ]);
     _cetRowsTKD = tkd;
     _cetRowsNST = nst;
@@ -3734,12 +3755,14 @@ async function cetMuatData() {
     _cetCombined = [
       ...tkd.map(r => ({ jenis:'TKD', nama:String(r.nama).trim(), sekolah:String(r.sekolah||'—').trim(), tgl: sertFmtExcelDate(r.tgl_tes), row:r })),
       ...nst.map(r => ({ jenis:'NST', nama:String(r.nama).trim(), sekolah:String(r.sekolah||'—').trim(), tgl: sertFmtExcelDate(r.tgl_tes), row:r })),
+      ...bf.map(r => ({ jenis:'BIGFIVE', nama:String(r.nama).trim(), sekolah:String(r.sekolah||'—').trim(), tgl: sertFmtExcelDate(r.tgl_tes), row:r })),
+      ...gb.map(r => ({ jenis:'GAYABELAJAR', nama:String(r.nama).trim(), sekolah:String(r.sekolah||'—').trim(), tgl: sertFmtExcelDate(r.tgl_tes), row:r })),
     ];
 
-    if (!_cetCombined.length) throw new Error('Tidak ada data ditemukan di sheet HASIL_TKD maupun HASIL_NST');
+    if (!_cetCombined.length) throw new Error('Tidak ada data ditemukan di sheet HASIL_TKD, HASIL_NST, HASIL_BIGFIVE, maupun HASIL_GAYABELAJAR');
 
     cetBuildSekolahOptions();
-    cetShowStatus(`✅ ${tkd.length} data TKD & ${nst.length} data NST berhasil dimuat`, 'ok');
+    cetShowStatus(`✅ ${tkd.length} TKD, ${nst.length} NST, ${bf.length} Big Five, ${gb.length} Gaya Belajar berhasil dimuat`, 'ok');
 
   } catch(err) {
     cetShowStatus(`❌ Gagal memuat data: ${err.message}. Pastikan Google Sheets sudah dibagikan (Anyone with link - Viewer).`, 'error');
@@ -3809,6 +3832,8 @@ function cetBuildNamaOptions() {
   const bEditT = document.getElementById('btn-cet-edit-tkd'); if (bEditT) { bEditT.disabled = true; bEditT.style.display = 'none'; }
   const bEditN = document.getElementById('btn-cet-edit-nst'); if (bEditN) { bEditN.disabled = true; bEditN.style.display = 'none'; }
   document.getElementById('cet-preview-area').style.display = 'none';
+  const lainRow0 = document.getElementById('cet-lain-row');
+  if (lainRow0) { lainRow0.style.display = 'none'; lainRow0.innerHTML = ''; }
   cetBatalEdit();
   _cetSelected = null;
 }
@@ -3832,6 +3857,8 @@ function cetPilihPeserta(nama) {
     btnTampilkan.disabled = true;
     btnEditTKD.disabled = true; btnEditTKD.style.display = 'none';
     btnEditNST.disabled = true; btnEditNST.style.display = 'none';
+    const lainRowX = document.getElementById('cet-lain-row');
+    if (lainRowX) { lainRowX.style.display = 'none'; lainRowX.innerHTML = ''; }
     return;
   }
 
@@ -3876,6 +3903,43 @@ function cetPilihPeserta(nama) {
   else             { btnEditTKD.disabled = true;  btnEditTKD.style.display = 'none'; }
   if (byJenis.NST) { btnEditNST.disabled = false; btnEditNST.style.display = 'inline-block'; }
   else             { btnEditNST.disabled = true;  btnEditNST.style.display = 'none'; }
+
+  // Instrumen lain (Big Five / Gaya Belajar) untuk peserta yang sama
+  const lainRow = document.getElementById('cet-lain-row');
+  const lainDefs = [
+    { jenis:'BIGFIVE',     label:'Big Five',      tabIdx:5, warna:'#7B9EC0' },
+    { jenis:'GAYABELAJAR', label:'Gaya Belajar',  tabIdx:6, warna:'#85B89A' },
+  ];
+  const lainHtml = lainDefs.filter(d => byJenis[d.jenis]).map(d => `
+    <div style="display:inline-flex;align-items:center;gap:8px;background:white;border:1px solid var(--rule);border-radius:8px;padding:7px 10px;margin:0 8px 8px 0">
+      <span style="width:7px;height:7px;border-radius:50%;background:${d.warna};display:inline-block"></span>
+      <span style="font-size:11px;font-weight:600;color:var(--ink)">${d.label}</span>
+      <button class="btn-o" style="padding:4px 10px;font-size:10px" onclick="cetLihatLain('${d.jenis}')">👁 Lihat</button>
+      <button class="btn-o" style="padding:4px 10px;font-size:10px;background:#FBF4EA;color:#7A5230;border-color:#E8CFAA" onclick="cetEditDataLain('${d.jenis}')">✏️ Edit</button>
+    </div>`).join('');
+  if (lainHtml) {
+    lainRow.innerHTML = '<div class="lbl" style="margin-bottom:6px">Instrumen lain untuk peserta ini</div>' + lainHtml;
+    lainRow.style.display = 'block';
+  } else {
+    lainRow.innerHTML = '';
+    lainRow.style.display = 'none';
+  }
+}
+
+// ── Buka laporan Big Five / Gaya Belajar dari hasil pilihan Cetak Laporan ──
+function cetLihatLain(jenis) {
+  if (!_cetSelected || !_cetSelected[jenis]) return;
+  const row = _cetSelected[jenis].row;
+  if (jenis === 'BIGFIVE') bfTampilkanDariData(row);
+  if (jenis === 'GAYABELAJAR') gbTampilkanDariData(row);
+}
+
+// ── Buka mode edit Big Five / Gaya Belajar dari hasil pilihan Cetak Laporan ──
+function cetEditDataLain(jenis) {
+  if (!_cetSelected || !_cetSelected[jenis]) return;
+  const row = _cetSelected[jenis].row;
+  if (jenis === 'BIGFIVE') bfMulaiEdit(row);
+  if (jenis === 'GAYABELAJAR') gbMulaiEdit(row);
 }
 
 // ── Isi form TKD dari baris GSheet lalu build & print ─────────
@@ -4287,6 +4351,30 @@ const BF_INTERPRETASI = {
 
 let bfAnswers = {};
 let bfEdited = {narasi:false, E:false, A:false, C:false, N:false, O:false};
+let _bfEditMode = false;
+let _bfEditKey  = null;
+
+function bfMulaiEdit(row){
+  bfAnswers = {};
+  BF_ITEMS.forEach((it,idx)=>{
+    const skor = parseInt(row['jawaban_'+(idx+1)]);
+    if (!isNaN(skor) && skor>0) bfAnswers[idx] = it.reverse ? (6-skor) : skor;
+  });
+  _bfEditMode = true;
+  _bfEditKey  = row.timestamp;
+  bfRenderForm();
+  bfHitung();
+  const banner = document.getElementById('bf-edit-banner');
+  if (banner) banner.style.display = 'flex';
+  showPanel('p-bigfive', document.querySelectorAll('.tab')[5]);
+}
+
+function bfBatalEdit(){
+  _bfEditMode = false;
+  _bfEditKey  = null;
+  const banner = document.getElementById('bf-edit-banner');
+  if (banner) banner.style.display = 'none';
+}
 
 function bfMarkEdited(key){ bfEdited[key] = true; }
 function bfResetField(key){ bfEdited[key] = false; bfBuildLaporan(); }
@@ -4358,6 +4446,8 @@ function bfRenderSummary(traitSum,pct,level){
 function konfirmasiBersihkanBF(btn){
   if (btn.dataset.confirm==='1') {
     bfAnswers = {};
+    bfEdited = {narasi:false, E:false, A:false, C:false, N:false, O:false};
+    bfBatalEdit();
     bfRenderForm();
     bfHitung();
     btn.textContent = '↺ Bersihkan Jawaban Big Five';
@@ -4491,9 +4581,11 @@ async function bfSaveToSheets(){
   ];
   btn.disabled = true; btn.textContent = 'Menyimpan...';
   try {
+    const payload = { tes:'BIGFIVE', sheet_name:'HASIL_BIGFIVE', headers, values };
+    if (_bfEditMode && _bfEditKey) { payload.mode = 'update'; payload.row_key = _bfEditKey; }
     const resp = await fetch(SHEETS_URL, {
       method:'POST', headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ tes:'BIGFIVE', sheet_name:'HASIL_BIGFIVE', headers, values }),
+      body: JSON.stringify(payload),
     });
     const raw = await resp.text();
     let result;
@@ -4510,9 +4602,10 @@ async function bfSaveToSheets(){
     statusEl.style.display='block';
     if (result.status==='ok') {
       statusEl.style.background='#EAF5EE'; statusEl.style.color='#2E7D4F';
-      statusEl.textContent = '✅ Tersimpan ke Google Sheets.';
+      statusEl.textContent = _bfEditMode ? '✅ Data berhasil di-update di Google Sheets.' : '✅ Tersimpan ke Google Sheets.';
       const cancelBtn = document.getElementById('bf-modal-cancel');
       if (cancelBtn) cancelBtn.textContent = '✓ Tutup';
+      if (_bfEditMode) bfBatalEdit();
     } else throw new Error(result.message||'gagal');
   } catch(err) {
     statusEl.style.display='block';
@@ -4570,6 +4663,30 @@ const GB_DIM_MAX = {V:12, A:12, K:12};
 
 let gbAnswers = {};
 let gbEdited = {narasi:false, saran:false};
+let _gbEditMode = false;
+let _gbEditKey  = null;
+
+function gbMulaiEdit(row){
+  gbAnswers = {};
+  GB_ITEMS.forEach((it,idx)=>{
+    const val = row['jawaban_'+(idx+1)];
+    if (val==='Ya' || val==='Tidak') gbAnswers[idx] = val;
+  });
+  _gbEditMode = true;
+  _gbEditKey  = row.timestamp;
+  gbRenderForm();
+  gbHitung();
+  const banner = document.getElementById('gb-edit-banner');
+  if (banner) banner.style.display = 'flex';
+  showPanel('p-gayabelajar', document.querySelectorAll('.tab')[6]);
+}
+
+function gbBatalEdit(){
+  _gbEditMode = false;
+  _gbEditKey  = null;
+  const banner = document.getElementById('gb-edit-banner');
+  if (banner) banner.style.display = 'none';
+}
 
 function gbMarkEdited(key){ gbEdited[key] = true; }
 function gbResetField(key){ gbEdited[key] = false; gbBuildLaporan(); }
@@ -4645,6 +4762,8 @@ function gbRenderSummary(skor,dominanText){
 function konfirmasiBersihkanGB(btn){
   if (btn.dataset.confirm==='1') {
     gbAnswers = {};
+    gbEdited = {narasi:false, saran:false};
+    gbBatalEdit();
     gbRenderForm();
     gbHitung();
     btn.textContent = '↺ Bersihkan Jawaban Gaya Belajar';
@@ -4734,9 +4853,11 @@ async function gbSaveToSheets(){
   ];
   btn.disabled = true; btn.textContent = 'Menyimpan...';
   try {
+    const payload = { tes:'GAYABELAJAR', sheet_name:'HASIL_GAYABELAJAR', headers, values };
+    if (_gbEditMode && _gbEditKey) { payload.mode = 'update'; payload.row_key = _gbEditKey; }
     const resp = await fetch(SHEETS_URL, {
       method:'POST', headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ tes:'GAYABELAJAR', sheet_name:'HASIL_GAYABELAJAR', headers, values }),
+      body: JSON.stringify(payload),
     });
     const raw = await resp.text();
     let result;
@@ -4752,9 +4873,10 @@ async function gbSaveToSheets(){
     statusEl.style.display='block';
     if (result.status==='ok') {
       statusEl.style.background='#EAF5EE'; statusEl.style.color='#2E7D4F';
-      statusEl.textContent = '✅ Tersimpan ke Google Sheets.';
+      statusEl.textContent = _gbEditMode ? '✅ Data berhasil di-update di Google Sheets.' : '✅ Tersimpan ke Google Sheets.';
       const cancelBtn = document.getElementById('gb-modal-cancel');
       if (cancelBtn) cancelBtn.textContent = '✓ Tutup';
+      if (_gbEditMode) gbBatalEdit();
     } else throw new Error(result.message||'gagal');
   } catch(err) {
     statusEl.style.display='block';

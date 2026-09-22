@@ -5098,6 +5098,132 @@ document.addEventListener('DOMContentLoaded', function(){
   papanStartAuto();
 });
 
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * TAMBAHAN BARU — Skor Norma Standar TKD 1979 + Skor Ekuivalen
+ * ═══════════════════════════════════════════════════════════════
+ * CARA PASANG:
+ * 1. Buka index.html Anda.
+ * 2. Cari baris paling akhir dari <script> utama, tepat SEBELUM tag
+ *    penutup </script> (di dekat akhir file, setelah semua kode
+ *    Papan Bersama).
+ * 3. Tempel SELURUH isi file ini di situ.
+ * 4. Simpan. Selesai — tidak ada satu baris pun kode lama yang diubah.
+ *
+ * CARA KERJA:
+ * - rawToSS(), buildReport(), dan Skor Komposit yang sudah ada
+ *   TIDAK disentuh sama sekali.
+ * - Kode ini "membungkus" (wrap) buildReport(): fungsi asli tetap
+ *   dipanggil apa adanya, lalu SETELAH itu selesai, kotak info baru
+ *   disisipkan ke laporan lewat JavaScript (bukan edit HTML manual).
+ * - Sumber tabel: "DAFTAR WS (NORMA STANDAR) TES KEMAMPUAN
+ *   DIFERENSIAL/TKD" — sample N=500, level Sekolah Lanjutan Atas,
+ *   Jakarta, 1979 (halaman terakhir MAN-TKD.docx).
+ *
+ * CATATAN PENTING (harus dibaca sebelum dipakai ke laporan resmi):
+ * 1. Baris "/I  10 7 5 3 7 10 6 5 6 7" di atas tabel norma pada
+ *    dokumen sumber TIDAK dipakai di sini karena artinya tidak
+ *    jelas (tidak cocok dengan pola SS 0–20 di bawahnya). Kalau
+ *    itu penting (mis. baris Mean), perlu dikonfirmasi ke sumber
+ *    aslinya dulu.
+ * 2. Kolom IX (Menyusun Gambar) baris SS=17 di dokumen tertulis
+ *    "7-18" — ini kemungkinan typo/salah-scan dari "17-18" (supaya
+ *    urutannya konsisten turun dari SS=18 ke SS=16). Di kode ini
+ *    dipakai sebagai 17. Cek ke dokumen asli kalau ragu.
+ * 3. "Skor Ekuivalen" BUKAN skor IQ dari tes IQ terstandar (WISC/
+ *    WAIS dll). Ini cuma konversi linier dari rata-rata Skor
+ *    Standar (skala 0–20, mean≈10) ke skala mean 100 / SD 15,
+ *    supaya familiar dibaca — bukan klaim setara psikometri IQ.
+ *    Disclaimer ini SENGAJA ditampilkan di laporan, jangan dihapus.
+ * 4. Norma ini dari tahun 1979, sampel Jakarta — relevansinya untuk
+ *    peserta masa kini adalah keputusan profesional psikolog,
+ *    bukan sesuatu yang divalidasi ulang oleh kode ini.
+ */
+
+// ── Tabel norma 1979: [ambang_raw_minimum, SS] per subtes, urut SS turun ──
+// "–" pada dokumen asli (rentang tidak ada datanya) dilewati saja.
+const TKD_NORMA_1979 = {
+  1:  [[19,20],[18,19],[17,18],[16,17],[15,16],[14,15],[13,14],[12,13],[11,12],[10,11],[9,10],[8,9],[7,8],[6,7],[5,5],[4,4],[3,3],[2,2],[1,1],[0,0]],
+  2:  [[39,20],[37,19],[35,18],[33,17],[31,16],[29,15],[27,14],[25,13],[23,12],[21,11],[19,10],[17,9],[15,8],[13,7],[11,6],[9,5],[7,4],[5,3],[3,2],[1,1],[0,0]],
+  3:  [[40,18],[38,17],[35,16],[33,15],[30,14],[28,13],[26,12],[23,11],[21,10],[18,9],[16,8],[13,7],[11,6],[8,5],[6,4],[3,3],[1,2],[0,1]],
+  4:  [[20,17],[19,16],[18,15],[17,14],[16,13],[15,12],[14,11],[13,10],[12,9],[11,8],[10,7],[9,6],[8,5],[7,4],[6,3],[5,2],[4,1],[0,0]],
+  5:  [[20,19],[19,18],[18,17],[17,16],[16,15],[15,14],[14,13],[13,12],[12,11],[11,10],[10,9],[9,8],[8,7],[7,6],[6,5],[5,3],[4,2],[2,1],[0,0]],
+  6:  [[30,20],[29,19],[27,18],[26,17],[24,16],[22,15],[20,14],[19,13],[17,12],[15,11],[13,10],[12,9],[10,8],[8,7],[7,6],[5,5],[3,4],[2,3],[0,2]],
+  7:  [[18,20],[17,19],[16,18],[15,17],[14,16],[13,15],[12,14],[11,13],[10,12],[9,10],[8,9],[7,8],[6,7],[5,6],[4,5],[3,4],[2,2],[1,1],[0,0]],
+  8:  [[19,20],[18,19],[17,17],[16,16],[15,15],[14,14],[13,13],[12,12],[11,11],[10,10],[9,9],[8,8],[7,7],[6,6],[5,5],[4,4],[3,3],[2,1],[1,0]],
+  9:  [[19,19],[18,18],[17,17],[16,16],[15,15],[14,14],[13,13],[12,12],[10,11],[9,10],[8,9],[7,8],[6,7],[5,6],[3,5],[2,4],[1,3],[0,2]],
+  10: [[78,20],[75,19],[72,18],[69,17],[66,16],[63,15],[60,14],[57,13],[54,12],[51,11],[48,10],[45,9],[42,8],[39,7],[36,6],[33,5],[30,4],[27,3],[24,2],[20,1],[0,0]],
+};
+
+function ssDariNorma1979(subtesIdx, raw) {
+  const tbl = TKD_NORMA_1979[subtesIdx];
+  if (!tbl) return 0;
+  for (const [ambang, ss] of tbl) {
+    if (raw >= ambang) return ss;
+  }
+  return 0;
+}
+
+function hitungKompositNorma1979() {
+  const ssPerSubtes = {};
+  for (let k = 1; k <= 10; k++) {
+    const raw = getTotValue('tot' + k); // pakai fungsi baca-total yang sudah ada, tidak diubah
+    ssPerSubtes[k] = ssDariNorma1979(k, raw);
+  }
+  const vals = Object.values(ssPerSubtes);
+  const avgSS = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const skorEkuivalen = Math.round(100 + 15 * ((avgSS - 10) / 3));
+  return { ssPerSubtes, avgSS, skorEkuivalen };
+}
+
+function renderNorma1979Section() {
+  const host = document.getElementById('lap-p1');
+  if (!host) return;
+  const { ssPerSubtes, avgSS, skorEkuivalen } = hitungKompositNorma1979();
+
+  let box = document.getElementById('norma1979-box');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'norma1979-box';
+    box.style.cssText = 'margin:0 44px 16px 52px;background:#FBF4EA;border:1px solid #E8CFAA;border-left:3px solid #C9A86E;border-radius:0 6px 6px 0;padding:13px 17px';
+    const footer = host.querySelector('.l-ft');
+    if (footer) host.insertBefore(box, footer); else host.appendChild(box);
+  }
+
+  const namaSub = {1:'TKD1',2:'TKD2',3:'TKD3',4:'TKD4',5:'TKD5',6:'TKD6',7:'TKD7',8:'TKD8',9:'TKD9',10:'TKD10'};
+  const rincian = Object.keys(ssPerSubtes)
+    .map(k => `${namaSub[k]}: <strong>${ssPerSubtes[k]}</strong>`)
+    .join(' &nbsp;·&nbsp; ');
+
+  box.innerHTML = `
+    <div style="font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:500;color:#7A5230;margin-bottom:6px;font-style:italic">
+      Skor Tambahan — Norma Standar TKD 1979 (Opsional)
+    </div>
+    <div style="font-size:10px;color:#4A4450;line-height:1.7">
+      SS per subtes berdasarkan tabel norma asli (N=500, Sekolah Lanjutan Atas, Jakarta, 1979):<br>
+      ${rincian}<br><br>
+      Rata-rata SS: <strong>${avgSS.toFixed(2)}</strong> &nbsp;·&nbsp;
+      Skor Ekuivalen (mean 100, SD 15): <strong>${skorEkuivalen}</strong>
+      <div style="font-size:8.5px;color:#8A7256;margin-top:6px;font-style:italic">
+        ⚠️ Bukan skor IQ dari tes IQ terstandar — hanya konversi linier dari norma TKD 1979
+        (sampel Jakarta, SLA). Tidak menggantikan Skor Komposit utama di atas.
+      </div>
+    </div>`;
+}
+
+// ── Bungkus buildReport() tanpa mengubah isi aslinya ──
+(function () {
+  const _origBuildReport = window.buildReport;
+  if (typeof _origBuildReport !== 'function') {
+    console.warn('Norma1979: buildReport() tidak ditemukan — pastikan snippet ini ditempel SETELAH definisi buildReport().');
+    return;
+  }
+  window.buildReport = function () {
+    _origBuildReport.apply(this, arguments);
+    try { renderNorma1979Section(); } catch (e) { console.error('Norma1979:', e); }
+  };
+})();
+
 </script>
 <!-- ══════════════════════════════════════════════════════════ -->
 <!-- ══ WIDGET MENGAMBANG: PAPAN BERSAMA (muncul otomatis di semua tab) ══ -->

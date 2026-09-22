@@ -5098,50 +5098,6 @@ document.addEventListener('DOMContentLoaded', function(){
   papanStartAuto();
 });
 
-/**
- * ═══════════════════════════════════════════════════════════════
- * TAMBAHAN BARU — Skor Norma Standar TKD 1979 + Skor Ekuivalen
- * ═══════════════════════════════════════════════════════════════
- * CARA PASANG:
- * 1. Buka index.html Anda.
- * 2. Cari baris paling akhir dari <script> utama, tepat SEBELUM tag
- *    penutup </script> (di dekat akhir file, setelah semua kode
- *    Papan Bersama).
- * 3. Tempel SELURUH isi file ini di situ.
- * 4. Simpan. Selesai — tidak ada satu baris pun kode lama yang diubah.
- *
- * CARA KERJA:
- * - rawToSS(), buildReport(), dan Skor Komposit yang sudah ada
- *   TIDAK disentuh sama sekali.
- * - Kode ini "membungkus" (wrap) buildReport(): fungsi asli tetap
- *   dipanggil apa adanya, lalu SETELAH itu selesai, kotak info baru
- *   disisipkan ke laporan lewat JavaScript (bukan edit HTML manual).
- * - Sumber tabel: "DAFTAR WS (NORMA STANDAR) TES KEMAMPUAN
- *   DIFERENSIAL/TKD" — sample N=500, level Sekolah Lanjutan Atas,
- *   Jakarta, 1979 (halaman terakhir MAN-TKD.docx).
- *
- * CATATAN PENTING (harus dibaca sebelum dipakai ke laporan resmi):
- * 1. Baris "/I  10 7 5 3 7 10 6 5 6 7" di atas tabel norma pada
- *    dokumen sumber TIDAK dipakai di sini karena artinya tidak
- *    jelas (tidak cocok dengan pola SS 0–20 di bawahnya). Kalau
- *    itu penting (mis. baris Mean), perlu dikonfirmasi ke sumber
- *    aslinya dulu.
- * 2. Kolom IX (Menyusun Gambar) baris SS=17 di dokumen tertulis
- *    "7-18" — ini kemungkinan typo/salah-scan dari "17-18" (supaya
- *    urutannya konsisten turun dari SS=18 ke SS=16). Di kode ini
- *    dipakai sebagai 17. Cek ke dokumen asli kalau ragu.
- * 3. "Skor Ekuivalen" BUKAN skor IQ dari tes IQ terstandar (WISC/
- *    WAIS dll). Ini cuma konversi linier dari rata-rata Skor
- *    Standar (skala 0–20, mean≈10) ke skala mean 100 / SD 15,
- *    supaya familiar dibaca — bukan klaim setara psikometri IQ.
- *    Disclaimer ini SENGAJA ditampilkan di laporan, jangan dihapus.
- * 4. Norma ini dari tahun 1979, sampel Jakarta — relevansinya untuk
- *    peserta masa kini adalah keputusan profesional psikolog,
- *    bukan sesuatu yang divalidasi ulang oleh kode ini.
- */
-
-// ── Tabel norma 1979: [ambang_raw_minimum, SS] per subtes, urut SS turun ──
-// "–" pada dokumen asli (rentang tidak ada datanya) dilewati saja.
 const TKD_NORMA_1979 = {
   1:  [[19,20],[18,19],[17,18],[16,17],[15,16],[14,15],[13,14],[12,13],[11,12],[10,11],[9,10],[8,9],[7,8],[6,7],[5,5],[4,4],[3,3],[2,2],[1,1],[0,0]],
   2:  [[39,20],[37,19],[35,18],[33,17],[31,16],[29,15],[27,14],[25,13],[23,12],[21,11],[19,10],[17,9],[15,8],[13,7],[11,6],[9,5],[7,4],[5,3],[3,2],[1,1],[0,0]],
@@ -5223,7 +5179,6 @@ function renderNorma1979Section() {
     try { renderNorma1979Section(); } catch (e) { console.error('Norma1979:', e); }
   };
 })();
-
 </script>
 <!-- ══════════════════════════════════════════════════════════ -->
 <!-- ══ WIDGET MENGAMBANG: PAPAN BERSAMA (muncul otomatis di semua tab) ══ -->
